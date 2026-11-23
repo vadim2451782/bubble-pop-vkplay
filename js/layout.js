@@ -15,9 +15,10 @@ export function createLayout(fieldWidth, fieldHeight, levelRows = 4) {
   const top = Math.max(6, Math.min(16, height * 0.015));
   const rowHeightFactor = Math.sqrt(3);
 
-  // Make sure the level's initial rows fit above the shooter area.
-  const usable = height - shooterZone - top - radius * 2;
-  const maxRadiusForHeight = usable / (Math.max(1, levelRows - 1) * rowHeightFactor + 2);
+  // Bubble size depends on the screen, not on the level: every level looks the
+  // same, and a tall starting stack grows downwards instead of shrinking the
+  // whole board. The height cap keeps ~twelve rows above the shooter.
+  const maxRadiusForHeight = (height * 0.62) / (12 * rowHeightFactor);
   radius = Math.min(radius, maxRadiusForHeight);
   radius = Math.max(7, Math.min(34, radius));
 
