@@ -1163,7 +1163,7 @@ async function initServiceWorker() {
 
 // The PWA build keeps offline caching; the platform build drops it, because a
 // cache-first worker would serve moderators a stale build.
-if (!platform.enabled && !window.__STORE__) window.addEventListener('load', initServiceWorker);
+if (!platform.enabled && !window.__STORE__ && !window.__VKPLAY__) window.addEventListener('load', initServiceWorker);
 window.addEventListener('beforeinstallprompt', (event) => {
   // Safari does not use this, but Chrome/Edge can offer an install prompt.
   event.preventDefault();

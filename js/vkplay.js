@@ -104,7 +104,7 @@ export class VkPlayBridge {
   onStatus(status) {
     const value = Number(status?.loginStatus ?? -1);
     this.loginStatus = value;
-    console.info('[vkplay] loginStatus =', value);
+    console.info('[vkplay] loginStatus =', value, JSON.stringify(status));
     if (value === 1) {
       // Authorized but not registered: VK Play shows the EULA window.
       try {
@@ -126,7 +126,7 @@ export class VkPlayBridge {
       } catch (error) {
         /* private mode */
       }
-      console.info('[vkplay] uid =', uid);
+      console.info('[vkplay] uid =', uid, JSON.stringify(info));
       this.onAuth?.(uid);
     } else {
       console.warn('[vkplay] userInfo without uid:', info);
@@ -210,3 +210,6 @@ export class VkPlayBridge {
 }
 
 export const vkplay = new VkPlayBridge();
+
+// Debug handle for the VK Play console (F12): __vkplay.loginStatus, __vkplay.uid.
+if (window.__VKPLAY__ === true) window.__vkplay = vkplay;
