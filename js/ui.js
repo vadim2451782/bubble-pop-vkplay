@@ -256,7 +256,7 @@ export class UI {
         const rec = this.store.getLevelRecord(id);
         if (rec.stars > 0) {
           worldDone += 1;
-          if (w >= firstWorld && w <= lastWorld) completed += 1;
+          completed += 1;
         }
         worldStars += rec.stars;
       }
