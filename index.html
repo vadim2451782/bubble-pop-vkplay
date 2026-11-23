@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Лопни пузыри</title>
+  <meta name="description" content="Лопни пузыри — аркада с шариками: 100 уровней, четыре бустера, звёзды за прохождение." />
+  <meta name="theme-color" content="#0a1b50" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png" />
+  <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body class="mode-menu">
+  <svg class="sprite" aria-hidden="true">
+    <defs>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4.2" height="14" rx="2.1" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="2.1" fill="currentColor"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8.5 5.2v13.6L20 12z" fill="currentColor"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+      <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5l4.5 3.8V5.7L7.5 9.5z" fill="currentColor"/><path d="M15 8.4a5 5 0 0 1 0 7.2M17.8 5.6a9 9 0 0 1 0 12.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-sound-off" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5l4.5 3.8V5.7L7.5 9.5z" fill="currentColor"/><path d="M15.5 9.5l5 5M20.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-music" viewBox="0 0 24 24"><path d="M10 18.2a2.8 2.8 0 1 1-1.4-2.4V6.3l9-2v9.7a2.8 2.8 0 1 1-1.4-2.4V7.1l-6.2 1.4z" fill="currentColor"/></symbol>
+      <symbol id="i-music-off" viewBox="0 0 24 24"><path d="M10 18.2a2.8 2.8 0 1 1-1.4-2.4V6.3l9-2v5.4M10 7.1l6.2-1.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M15.5 14.5l5 5M20.5 14.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="2.4" fill="currentColor"/><circle cx="15" cy="12" r="2.4" fill="currentColor"/><circle cx="8" cy="17" r="2.4" fill="currentColor"/></symbol>
+      <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#f6b93b"/><circle cx="12" cy="12" r="7" fill="#ffd968"/><path d="M12 7.4l1.4 3 3.2.4-2.4 2.2.7 3.2-2.9-1.6-2.9 1.6.7-3.2-2.4-2.2 3.2-.4z" fill="#b97400"/></symbol>
+      <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.9l2.8 5.8 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.6l6.2-.9z" fill="currentColor"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3" fill="currentColor"/><path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="15" r="1.6" fill="#0a1b50"/></symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2" fill="currentColor"/><rect x="13" y="4" width="7" height="7" rx="2" fill="currentColor"/><rect x="4" y="13" width="7" height="7" rx="2" fill="currentColor"/><rect x="13" y="13" width="7" height="7" rx="2" fill="currentColor"/></symbol>
+      <symbol id="i-shop" viewBox="0 0 24 24"><path d="M3.5 6h2.2l2.5 10.4a1.8 1.8 0 0 0 1.75 1.36h7.4a1.8 1.8 0 0 0 1.75-1.36L21.5 8H6.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.6" cy="20.2" r="1.55" fill="currentColor"/><circle cx="18" cy="20.2" r="1.55" fill="currentColor"/><path d="M10 11h8M10 14h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+      <symbol id="i-bomb" viewBox="0 0 24 24"><circle cx="11" cy="14" r="7" fill="currentColor"/><path d="M15.5 8.5c.5-2 2-3.2 4-3.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M19.6 3.4l.7 1.8 1.9.6-1.6 1.3.2 2-1.8-.9-1.7 1 .1-2-1.6-1.3 1.9-.6z" fill="currentColor"/><circle cx="8.7" cy="11.6" r="1.9" fill="#fff" opacity=".75"/></symbol>
+      <symbol id="i-lightning" viewBox="0 0 24 24"><path d="M13.5 2.5L5 13.2h5.3L9.4 21.5 19 10.3h-5.6z" fill="currentColor"/></symbol>
+      <symbol id="i-rainbow" viewBox="0 0 24 24"><path d="M3 18a9 9 0 0 1 18 0" fill="none" stroke="#ff5b7f" stroke-width="3" stroke-linecap="round"/><path d="M5.4 18a6.6 6.6 0 0 1 13.2 0" fill="none" stroke="#ffd23f" stroke-width="3" stroke-linecap="round"/><path d="M7.8 18a4.2 4.2 0 0 1 8.4 0" fill="none" stroke="#3ddc84" stroke-width="3" stroke-linecap="round"/><path d="M10.2 18a1.8 1.8 0 0 1 3.6 0" fill="none" stroke="#4da6ff" stroke-width="3" stroke-linecap="round"/></symbol>
+      <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M12 2.2s4.2 3.4 4.2 8.1c0 2.7-1 4.9-2.7 6.6L12 18.7l-1.5-1.8C8.8 15.2 7.8 13 7.8 10.3 7.8 5.6 12 2.2 12 2.2z" fill="currentColor"/><circle cx="12" cy="9.2" r="1.7" fill="#0b1b45"/><path d="M9.2 15.2L6.5 18c0 1.6.6 3.1 1.7 4.2l2.8-2.4zM14.8 15.2L17.5 18c0 1.6-.6 3.1-1.7 4.2l-2.8-2.4z" fill="currentColor"/></symbol>
+      <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5.5a5 5 0 0 1-10 0z" fill="currentColor"/><path d="M7 5H4v2.5A3.5 3.5 0 0 0 7.5 11M17 5h3v2.5A3.5 3.5 0 0 1 16.5 11" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 14h5v3h-5zM7.5 20.5h9V18h-9z" fill="currentColor"/></symbol>
+    <symbol id="i-world-candy" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="6" fill="currentColor"/><path d="M12 14.5v7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9.5 7.1a3.2 3.2 0 0 1 2.6-2" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".6"/></symbol>
+    <symbol id="i-world-bubble" viewBox="0 0 24 24"><circle cx="12" cy="12.5" r="7.2" fill="none" stroke="currentColor" stroke-width="2.1"/><circle cx="9.1" cy="9.6" r="2.1" fill="#fff" opacity=".7"/><circle cx="16.3" cy="16" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-world-sweet" viewBox="0 0 24 24"><rect x="7" y="8.5" width="10" height="7" rx="3.5" fill="currentColor"/><path d="M7 9.5L3.5 7v10L7 14.5M17 9.5l3.5-2.5v10L17 14.5" fill="currentColor"/></symbol>
+    <symbol id="i-world-city" viewBox="0 0 24 24"><path d="M4 20V10h4v10M10 20V5h5v15M17 20v-7h3v7" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-world-planet" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="currentColor"/><ellipse cx="12" cy="12" rx="10" ry="3.2" fill="none" stroke="currentColor" stroke-width="1.7" transform="rotate(-18 12 12)"/></symbol>
+    <symbol id="i-world-fish" viewBox="0 0 24 24"><path d="M4 12c3-5 8-6 12-2l4-3v10l-4-3c-4 4-9 3-12-2z" fill="currentColor"/><circle cx="9" cy="11" r="1.2" fill="#06224d"/></symbol>
+    <symbol id="i-world-castle" viewBox="0 0 24 24"><path d="M4 20V8h3V5h3v3h4V5h3v3h3v12z" fill="currentColor"/><path d="M10 20v-5h4v5" fill="#0b1b45"/></symbol>
+    <symbol id="i-world-cloud" viewBox="0 0 24 24"><path d="M6 17.5h11a4 4 0 0 0 .5-8A6 6 0 0 0 6 10a3.7 3.7 0 0 0 0 7.5z" fill="currentColor"/></symbol>
+    <symbol id="i-world-party" viewBox="0 0 24 24"><path d="M12 3l2.3 5 5.4.6-4 3.6 1.1 5.3L12 14.6l-4.8 2.9 1.1-5.3-4-3.6 5.4-.6z" fill="currentColor"/><path d="M3 4l2 2M20 4l-2 2M4 20l2-2M20 20l-2-2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.7" r="1.3" fill="currentColor"/><path d="M12 11v5.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="app" id="app">
+    <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="game-ui" id="gameUi">
+      <header class="hud" id="hud">
+        <button class="icon-btn" id="btnPause" type="button" aria-label="Пауза">
+          <svg class="icon"><use href="#i-pause"></use></svg>
+        </button>
+        <div class="level-chip" id="levelChip">
+          <span class="level-chip__label">Уровень</span>
+          <b class="level-chip__num" id="hudLevel">1</b>
+        </div>
+        <div class="hud__spacer"></div>
+        <div class="coin-chip" id="hudCoinChip" data-action="hudShop" role="button" tabindex="0" title="Монеты и магазин">
+          <svg class="icon"><use href="#i-coin"></use></svg>
+          <span id="hudCoins">0</span>
+        </div>
+        <button class="icon-btn icon-btn--media" id="btnSound" type="button" aria-label="Звуки">
+          <svg class="icon"><use href="#i-sound"></use></svg>
+        </button>
+        <button class="icon-btn icon-btn--media" id="btnMusic" type="button" aria-label="Музыка">
+          <svg class="icon"><use href="#i-music"></use></svg>
+        </button>
+      </header>
+
+      <main class="stage" id="stage">
+        <canvas id="game" aria-label="Игровое поле"></canvas>
+        <div class="progress-line" aria-hidden="true"><i id="progressFill"></i></div>
+        <div class="target-hint" id="targetHint" hidden>
+          <span id="targetHintText">Выберите шарик</span>
+          <button class="target-hint__cancel" id="btnCancelBooster" type="button" aria-label="Отменить бустер">
+            <svg class="icon"><use href="#i-close"></use></svg>
+          </button>
+        </div>
+        <div class="stage__levelname" id="stageLevelName"></div>
+      </main>
+
+      <footer class="dock" id="dock">
+        <div class="shots" id="shotsPill" aria-label="Осталось ходов">
+          <b id="dockShots">30</b>
+          <small>ходов</small>
+        </div>
+        <div class="booster-bar" id="boosterBar">
+          <button class="booster" data-booster="bomb" type="button" aria-label="Бомба">
+            <span class="booster__icon"><svg class="icon"><use href="#i-bomb"></use></svg></span>
+            <span class="booster__count" data-count="bomb">0</span>
+          </button>
+          <button class="booster" data-booster="lightning" type="button" aria-label="Молния">
+            <span class="booster__icon"><svg class="icon"><use href="#i-lightning"></use></svg></span>
+            <span class="booster__count" data-count="lightning">0</span>
+          </button>
+          <button class="booster" data-booster="rainbow" type="button" aria-label="Радужный шар">
+            <span class="booster__icon"><svg class="icon"><use href="#i-rainbow"></use></svg></span>
+            <span class="booster__count" data-count="rainbow">0</span>
+          </button>
+          <button class="booster" data-booster="rocket" type="button" aria-label="Ракета">
+            <span class="booster__icon"><svg class="icon"><use href="#i-rocket"></use></svg></span>
+            <span class="booster__count" data-count="rocket">0</span>
+          </button>
+        </div>
+      </footer>
+    </div>
+
+    <div class="screens" id="screens">
+      <section class="screen screen--meta screen--menu is-active" data-screen="menu">
+        <header class="meta-top">
+          <div class="coin-chip coin-chip--big">
+            <svg class="icon"><use href="#i-coin"></use></svg>
+            <span class="js-coins">0</span>
+          </div>
+          <div class="meta-top__actions">
+            <button class="icon-btn" data-action="shop" type="button" aria-label="Магазин">
+              <svg class="icon"><use href="#i-shop"></use></svg>
+            </button>
+            <button class="icon-btn" data-action="settings" type="button" aria-label="Настройки">
+              <svg class="icon"><use href="#i-settings"></use></svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="menu-hero">
+          <div class="menu-bubbles" aria-hidden="true">
+            <i class="mb mb--red"></i><i class="mb mb--blue"></i><i class="mb mb--green"></i>
+            <i class="mb mb--yellow"></i><i class="mb mb--purple"></i><i class="mb mb--orange"></i>
+          </div>
+          <h1 class="logo" aria-label="Лопни пузыри">
+            <span class="logo__word">Лопни</span>
+            <em>пузыри!</em>
+          </h1>
+          <p class="tagline">Лопай шарики · собирай звёзды</p>
+          <div class="menu-stats">
+            <span><b class="js-coins">0</b> монет</span>
+            <span class="menu-stats__dot" id="menuStarsDot" hidden></span>
+            <span id="menuStarsWrap" hidden><b id="menuStars">0</b> звёзд</span>
+          </div>
+        </div>
+
+        <div class="menu-actions">
+          <button class="btn btn--primary btn--xl" data-action="play" type="button">
+            <span class="btn__badge"><svg class="icon"><use href="#i-play"></use></svg></span>
+            <span class="btn__text"><b>Играть</b><small id="playSub">Уровень 1</small></span>
+            <span class="btn__chev">›</span>
+          </button>
+          <div class="menu-row">
+            <button class="btn btn--ghost" data-action="levels" type="button">
+              <svg class="icon"><use href="#i-grid"></use></svg><span>Уровни</span>
+            </button>
+            <button class="btn btn--ghost" data-action="shop" type="button">
+              <svg class="icon"><use href="#i-shop"></use></svg><span>Магазин</span>
+            </button>
+          </div>
+        </div>
+
+        <footer class="menu-foot">
+          <span>1000 уровней · 4 бустера</span>
+        </footer>
+      </section>
+
+      <section class="screen screen--meta" data-screen="levels">
+        <header class="meta-head">
+          <button class="icon-btn" data-action="levelsBack" type="button" aria-label="Назад">
+            <svg class="icon"><use href="#i-back"></use></svg>
+          </button>
+          <h2>Карта уровней</h2>
+          <div class="coin-chip"><svg class="icon"><use href="#i-coin"></use></svg><span class="js-coins">0</span></div>
+        </header>
+        <div class="level-summary">
+          <div class="level-summary__bar"><i id="levelsProgressFill"></i></div>
+          <span id="levelsProgressText">0 из 1000 уровней</span>
+        </div>
+        <div class="level-grid" id="levelGrid"></div>
+        <p class="screen-note">100 миров по 10 уровней — больше тысячи головоломок. Проходите уровни и собирайте звёзды!</p>
+      </section>
+
+      <section class="screen screen--meta" data-screen="shop">
+        <header class="meta-head">
+          <button class="icon-btn" data-action="shopBack" type="button" aria-label="Назад">
+            <svg class="icon"><use href="#i-back"></use></svg>
+          </button>
+          <h2>Магазин</h2>
+          <div class="coin-chip coin-chip--button" aria-label="Баланс монет">
+            <svg class="icon"><use href="#i-coin"></use></svg><span class="js-coins">0</span>
+          </div>
+        </header>
+        <p class="shop-sub">Бустеры помогают на сложных уровнях. Монеты: 1 за каждые 4 лопнутых шарика плюс бонус за победу.</p>
+        <section class="coins-shop" id="coinsShop" hidden>
+          <h3>Монеты</h3>
+          <div class="coins-row" id="coinsRow"></div>
+          <button class="shop-remove-ads" id="btnRemoveAds" type="button" hidden></button>
+        </section>
+        <button class="shop-coins-ad" id="shopCoinsAd" data-action="buyCoins" type="button" hidden>
+          <svg class="icon"><use href="#i-play"></use></svg>
+          <span>Посмотреть рекламу и получить <b id="shopCoinsAdAmount">+15 монет</b></span>
+        </button>
+        <div class="shop-list" id="shopList"></div>
+        <div class="ad-banner" id="adBanner" hidden></div>
+        <p class="screen-note">Купленные бустеры хранятся в инвентаре и доступны на игровом поле.</p>
+      </section>
+
+      <section class="screen screen--meta" data-screen="settings">
+        <header class="meta-head">
+          <button class="icon-btn" data-action="settingsBack" type="button" aria-label="Назад">
+            <svg class="icon"><use href="#i-back"></use></svg>
+          </button>
+          <h2>Настройки</h2>
+          <span class="meta-head__spacer"></span>
+        </header>
+        <div class="settings-list">
+          <div class="setting-row">
+            <div><b>Звуки</b><small>Выстрелы, взрывы и щелчки</small></div>
+            <button class="switch" id="toggleSound" type="button" role="switch" aria-checked="true"><i></i></button>
+          </div>
+          <div class="setting-row">
+            <div><b>Музыка</b><small>Фоновая мелодия</small></div>
+            <button class="switch" id="toggleMusic" type="button" role="switch" aria-checked="true"><i></i></button>
+          </div>
+          <div class="settings-block settings-block--row">
+            <div><b>Версия</b><small>1.0.13</small></div>
+          </div>
+          <button class="btn btn--danger" data-action="reset" type="button">Сбросить прогресс</button>
+          <p class="screen-note">Прогресс хранится только на этом устройстве.</p>
+        </div>
+      </section>
+
+      <section class="screen screen--modal" data-screen="pause">
+        <div class="card modal-card">
+          <p class="modal-kicker">Передышка</p>
+          <h2>Пауза</h2>
+          <p class="modal-text">Осталось ходов: <b id="pauseShots">0</b></p>
+          <button class="btn btn--primary" data-action="resume" type="button">Продолжить</button>
+          <div class="modal-row">
+            <button class="btn btn--ghost" data-action="retry" type="button">Заново</button>
+            <button class="btn btn--ghost" data-action="pauseShop" type="button">Магазин</button>
+          </div>
+          <button class="btn btn--ghost" data-action="pauseSettings" type="button">Настройки</button>
+          <button class="btn btn--plain" data-action="menu" type="button">Выйти в меню</button>
+        </div>
+      </section>
+
+      <section class="screen screen--modal" data-screen="win">
+        <div class="card modal-card modal-card--win">
+          <div class="result-badge result-badge--win">
+            <svg class="icon"><use href="#i-trophy"></use></svg>
+          </div>
+          <h2>Уровень пройден!</h2>
+          <div class="stars stars--lg" id="winStars" data-stars="0">
+            <svg class="icon star"><use href="#i-star"></use></svg>
+            <svg class="icon star"><use href="#i-star"></use></svg>
+            <svg class="icon star"><use href="#i-star"></use></svg>
+          </div>
+          <div class="result-grid">
+            <div><small>Очки</small><b id="winScore">0</b></div>
+            <div><small>Монеты</small><b id="winCoins">0</b></div>
+            <div><small>Ходы</small><b id="winShots">0</b></div>
+          </div>
+          <button class="btn btn--primary" data-action="next" type="button" id="btnNextLevel">Далее</button>
+          <div class="modal-row">
+            <button class="btn btn--ghost" data-action="retry" type="button">Заново</button>
+            <button class="btn btn--ghost" data-action="levels" type="button">Уровни</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen screen--modal" data-screen="lose">
+        <div class="card modal-card">
+          <div class="result-badge result-badge--lose">
+            <svg class="icon"><use href="#i-bomb"></use></svg>
+          </div>
+          <h2 id="loseTitle">Ходы закончились</h2>
+          <p class="modal-text" id="loseText">Шарики остались на поле. Попробуйте ещё раз — или возьмите бустер.</p>
+          <div class="result-grid">
+            <div><small>Очки</small><b id="loseScore">0</b></div>
+            <div><small>Монеты</small><b id="loseCoins">0</b></div>
+            <div><small>Осталось</small><b id="loseLeft">0</b></div>
+          </div>
+          <button class="btn btn--ad" id="btnContinueAd" data-action="continueAd" type="button" hidden>
+            <svg class="icon"><use href="#i-play"></use></svg>
+            <span>+5 шаров за рекламу</span>
+          </button>
+          <button class="btn btn--primary" data-action="retry" type="button">Ещё раз</button>
+          <div class="modal-row">
+            <button class="btn btn--ghost" data-action="loseShop" type="button">Бустеры</button>
+            <button class="btn btn--ghost" data-action="levels" type="button">Уровни</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <div class="offline-gate" id="offlineGate" hidden>
+      <div class="offline-card">
+        <b>Нет подключения к интернету</b>
+        <p>Игра подгружает рекламу, поэтому без сети не запускается. Проверьте мобильную сеть или Wi-Fi и попробуйте ещё раз.</p>
+        <button class="btn btn--primary" id="btnOfflineRetry" type="button">Проверить снова</button>
+      </div>
+    </div>
+
+    <div class="rotate-overlay" id="rotateOverlay">
+      <div class="rotate-card">
+        <div class="rotate-phone"><i></i></div>
+        <b>Поверните телефон</b>
+        <span>Игра идёт в вертикальном режиме</span>
+      </div>
+    </div>
+
+    <div class="confirm" id="confirmReset" hidden>
+      <div class="card modal-card">
+        <h2>Сбросить прогресс?</h2>
+        <p class="modal-text">Уровни, звёзды, монеты и бустеры сбросятся. Это действие нельзя отменить.</p>
+        <button class="btn btn--danger" id="confirmResetYes" type="button">Да, сбросить</button>
+        <button class="btn btn--plain" id="confirmResetNo" type="button">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <noscript><div class="noscript">Для игры нужен JavaScript.</div></noscript>
+  <script>
+    // Store build: native ad/IAP bridge. VK Play build: plain web game.
+    window.__VKPLAY__ = true;
+  </script>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
