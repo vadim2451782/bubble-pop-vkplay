@@ -2,7 +2,7 @@
  * Application controller: boots the game, wires DOM input, animation loop,
  * screen transitions, boosters, audio and PWA registration.
  */
-import { ADS_COIN_PACK, BOOSTERS, BOOSTER_ORDER, COIN_PACKS, LOSE_CONTINUE_SHOTS, RAINBOW, REMOVE_ADS_PRODUCT, REWARD, SCORE, TUNING } from './config.js';
+import { ADS_COIN_PACK, BOOSTERS, BOOSTER_ORDER, COIN_PACKS, LOSE_CONTINUE_SHOTS, MAX_LEVEL, RAINBOW, REMOVE_ADS_PRODUCT, REWARD, SCORE, TUNING } from './config.js';
 import { getLevel, getNextLevel, LEVELS } from './levels.js';
 import { createLayout } from './layout.js';
 import { Game } from './game.js';
@@ -327,6 +327,14 @@ function finishWin() {
   ui.setCoins(store.coins);
   ui.renderAll();
   audio.play('win');
+  if (level.id >= MAX_LEVEL) {
+    const totalStars = LEVELS.reduce((sum, item) => sum + store.getLevelRecord(item.id).stars, 0);
+    ui.showComplete({ stars: totalStars, coins: store.coins });
+    for (let i = 0; i < 3; i += 1) {
+      setTimeout(() => audio.play('star'), 420 + i * 240);
+    }
+    return;
+  }
   const next = getNextLevel(level.id);
   ui.showWin({
     game,
@@ -425,6 +433,8 @@ function openLevels() {
   paused = true;
   ui.showScreen('levels');
   ui.renderLevels();
+  // The screen is visible now, so the map can scroll to the current level.
+  requestAnimationFrame(() => ui.scrollLevelsToCurrent());
   currentMetaBack = 'menu';
 }
 
@@ -997,6 +1007,22 @@ function onAction(action, data = {}) {
       break;
     case 'levels':
       openLevels();
+      break;
+    case 'toggleAllWorlds':
+      ui.toggleAllWorlds();
+      audio.play('click');
+      break;
+    case 'completeClose':
+      returnToMenu();
+      break;
+    case 'resetProgress':
+      store.resetProgress();
+      resultScreenOpen = false;
+      ui.renderAll();
+      ui.setCoins(store.coins);
+      ui.toast('Прогресс стёрт — начинаем с первого уровня');
+      audio.play('click');
+      returnToMenu();
       break;
     case 'levelsBack':
       returnToMenu();

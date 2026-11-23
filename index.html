@@ -269,6 +269,29 @@
         </div>
       </section>
 
+      <section class="screen screen--modal" data-screen="complete">
+        <div class="card modal-card modal-card--complete">
+          <div class="result-badge result-badge--win">
+            <svg class="icon"><use href="#i-trophy"></use></svg>
+          </div>
+          <p class="modal-kicker">1000 из 1000</p>
+          <h2>Вы прошли игру!</h2>
+          <p class="modal-text">
+            Поздравляем — все 100 миров и 1000 уровней позади. Спасибо, что дошли до конца!
+          </p>
+          <div class="result-grid">
+            <div><small>Звёзды</small><b id="completeStars">0</b></div>
+            <div><small>Монеты</small><b id="completeCoins">0</b></div>
+            <div><small>Миров</small><b>100</b></div>
+          </div>
+          <button class="btn btn--primary" data-action="completeClose" type="button">Играть ещё</button>
+          <div class="modal-row">
+            <button class="btn btn--ghost" data-action="levels" type="button">Карта</button>
+            <button class="btn btn--ghost" data-action="resetProgress" type="button">Стереть прогресс</button>
+          </div>
+        </div>
+      </section>
+
       <section class="screen screen--modal" data-screen="lose">
         <div class="card modal-card">
           <div class="result-badge result-badge--lose">
