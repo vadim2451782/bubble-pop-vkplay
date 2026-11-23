@@ -129,11 +129,15 @@ export const ECONOMY = {
 /** Daily login rewards, one per day of a seven day streak. */
 export const DAILY_REWARDS = [10, 15, 20, 30, 40, 60, 100];
 
-/** Three quests a day; progress resets at local midnight. */
+/**
+ * Four quests a day: two easy, two hard, progress resets at local midnight.
+ * Quests may share a metric — the progress counter is per metric, targets differ.
+ */
 export const QUESTS = [
-  { id: 'levels', title: 'Пройти 2 уровня', target: 2, reward: 30 },
-  { id: 'bubbles', title: 'Лопнуть 60 шариков', target: 60, reward: 30 },
-  { id: 'stars', title: 'Собрать 4 звезды', target: 4, reward: 40 },
+  { id: 'levels_easy', title: 'Пройти 2 уровня', metric: 'levels', target: 2, reward: 15 },
+  { id: 'bubbles_easy', title: 'Лопнуть 50 шариков', metric: 'bubbles', target: 50, reward: 15 },
+  { id: 'levels_hard', title: 'Пройти 6 уровней', metric: 'levels', target: 6, reward: 30 },
+  { id: 'stars_hard', title: 'Собрать 12 звёзд', metric: 'stars', target: 12, reward: 30 },
 ];
 
 /** Booster bundles: three of a kind for less than the single price. */

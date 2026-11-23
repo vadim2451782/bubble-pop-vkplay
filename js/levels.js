@@ -204,7 +204,7 @@ for (let i = SPECS.length; i < MAX_LEVEL; i += 1) {
   const within = i % LEVELS_PER_WORLD;
   SPECS.push({
     name: `${WORLDS[world].name} · ${within + 1}`,
-    rows: Math.min(10, 4 + Math.floor((i / 8) % 7)),
+    rows: Math.min(10, 6 + Math.floor((i / 9) % 5)),
     colors: Math.min(6, 3 + Math.floor((i / 16) % 4)),
     shape: LATE_SHAPES[(i * 7 + world) % LATE_SHAPES.length],
     style: LATE_STYLES[(i + within * 3) % LATE_STYLES.length],
@@ -251,13 +251,45 @@ function buildLevel(spec, index) {
   };
 
   let { rows, bubbles: totalBubbles } = paint(spec.shape, spec.rows);
-  // A few sparse shapes collapse to a handful of bubbles; those boards are not
-  // playable, so fall back to a dense board with the same colours and seed.
-  if (totalBubbles < 30) {
-    ({ rows, bubbles: totalBubbles } = paint('full', Math.max(5, spec.rows)));
+  // Sparse shapes (pyramid, ring, towers) leave holes that make a level feel
+  // empty. Fill them from the ceiling down until the board is dense enough —
+  // the silhouette survives, the board just has more bubbles to pop.
+  const TARGET_BUBBLES = 60;
+  const densify = (pattern) => {
+    const grid = pattern.map((row) => [...row].map((ch) => (ch === '.' ? null : ch)));
+    let count = grid.flat().filter(Boolean).length;
+    let guard = 0;
+    while (count < TARGET_BUBBLES && guard < 600) {
+      guard += 1;
+      const candidates = [];
+      for (let r = 0; r < grid.length; r += 1) {
+        for (let c = 0; c < grid[r].length; c += 1) {
+          if (grid[r][c]) continue;
+          // Same neighbour rule the engine uses: even rows connect to c-1/c
+          // above, odd rows to c/c+1. Filling by any other rule would leave
+          // bubbles that look attached but count as floating.
+          const upper = r === 0 ? [] : (r % 2 === 0 ? [c - 1, c] : [c, c + 1]);
+          const above = r === 0
+            ? true
+            : upper.some((cc) => cc >= 0 && cc < (grid[r - 1]?.length || 0) && grid[r - 1][cc]);
+          if (above) candidates.push([r, c]);
+        }
+      }
+      if (!candidates.length) break;
+      const [r, c] = candidates[(seed + guard * 31) % candidates.length];
+      grid[r][c] = String(((seed + guard * 7) % spec.colors) + 1);
+      count += 1;
+    }
+    return grid.map((row) => row.map((ch) => ch || '.').join(''));
+  };
+
+  rows = densify(rows);
+  totalBubbles = rows.reduce((n, row) => n + [...row].filter((ch) => ch !== '.').length, 0);
+  if (totalBubbles < 45) {
+    ({ rows, bubbles: totalBubbles } = paint('full', Math.min(10, Math.max(7, spec.rows + 2))));
   }
 
-  const shots = Math.max(spec.shots, Math.ceil(totalBubbles * 0.7) + 30);
+  const shots = Math.max(spec.shots, Math.ceil(totalBubbles * 1.15) + 36);
   const palette = COLORS.slice(0, spec.colors).map((c) => c.id);
 
   return {

@@ -156,18 +156,13 @@ export class Store {
       bubbles: int(parsed.quests?.progress?.bubbles, 0, 0, 99999),
       stars: int(parsed.quests?.progress?.stars, 0, 0, 99999),
     };
+    const questIds = new Set(QUESTS.map((quest) => quest.id));
     state.quests.claimed = Array.isArray(parsed.quests?.claimed)
-      ? parsed.quests.claimed.filter((id) => typeof id === 'string').slice(-10)
+      ? parsed.quests.claimed.filter((id) => questIds.has(id)).slice(-10)
       : [];
     if (parsed.quests?.day !== today) {
       state.quests.progress = { levels: 0, bubbles: 0, stars: 0 };
       state.quests.claimed = [];
-    } else {
-      for (const quest of QUESTS) {
-        if (state.quests.claimed.includes(quest.id)) {
-          state.quests.progress[quest.id] = Math.max(state.quests.progress[quest.id] || 0, quest.target);
-        }
-      }
     }
 
     // Cosmetics: only ids that exist in the catalogue are kept.
@@ -322,12 +317,14 @@ export class Store {
 
   /* ----------------------------------------------------------- quests */
 
-  questProgress(id, amount = 1) {
-    if (!(id in this.state.quests.progress)) return;
+  /** Adds progress to a metric (levels / bubbles / stars), capped by the quests. */
+  questProgress(metric, amount = 1) {
+    if (!(metric in this.state.quests.progress)) return;
     if (amount <= 0) return;
-    const quest = QUESTS.find((item) => item.id === id);
-    if (!quest || this.state.quests.claimed.includes(id)) return;
-    this.state.quests.progress[id] = Math.min(quest.target, this.state.quests.progress[id] + amount);
+    const cap = QUESTS.filter((quest) => quest.metric === metric)
+      .reduce((max, quest) => Math.max(max, quest.target), 0);
+    if (!cap) return;
+    this.state.quests.progress[metric] = Math.min(cap, this.state.quests.progress[metric] + amount);
     this.save();
   }
 
@@ -335,11 +332,15 @@ export class Store {
     return this.state.quests.claimed.includes(id);
   }
 
+  questProgressOf(quest) {
+    return this.state.quests.progress[quest.metric] || 0;
+  }
+
   claimQuest(id) {
     const quest = QUESTS.find((item) => item.id === id);
     if (!quest) return { ok: false, reason: 'unknown' };
     if (this.state.quests.claimed.includes(id)) return { ok: false, reason: 'claimed' };
-    if ((this.state.quests.progress[id] || 0) < quest.target) return { ok: false, reason: 'progress' };
+    if (this.questProgressOf(quest) < quest.target) return { ok: false, reason: 'progress' };
     this.state.quests.claimed.push(id);
     this.state.coins += quest.reward;
     this.save();

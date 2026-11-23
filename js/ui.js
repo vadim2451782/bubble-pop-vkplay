@@ -235,7 +235,7 @@ export class UI {
     let ready = 0;
     if (this.store.dailyRewardIndex() !== null) ready += 1;
     for (const quest of QUESTS) {
-      if (!this.store.questClaimed(quest.id) && (this.store.state.quests.progress[quest.id] || 0) >= quest.target) {
+      if (!this.store.questClaimed(quest.id) && this.store.questProgressOf(quest) >= quest.target) {
         ready += 1;
       }
     }
@@ -256,7 +256,7 @@ export class UI {
     }
 
     this.el.questList.innerHTML = QUESTS.map((quest) => {
-      const progress = Math.min(quest.target, this.store.state.quests.progress[quest.id] || 0);
+      const progress = Math.min(quest.target, this.store.questProgressOf(quest));
       const claimed = this.store.questClaimed(quest.id);
       const done = progress >= quest.target;
       const percent = Math.round((progress / quest.target) * 100);
