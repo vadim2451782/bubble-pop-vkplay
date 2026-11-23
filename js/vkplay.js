@@ -182,10 +182,15 @@ export class VkPlayBridge {
       // frame. paymentFrame(merchant_param) would start a second, unsigned
       // billing request and the payment window fails.
       const frameUrl = this.api?.paymentFrameUrl || this.api?.PaymentFrameUrl;
+      window.__vkplayLastUrl = data.url;
+      try {
+        await navigator.clipboard?.writeText?.(data.url);
+      } catch (error) {
+        /* clipboard is optional */
+      }
       if (typeof frameUrl === 'function') {
         frameUrl.call(this.api, { url: data.url });
       } else {
-        // No URL-frame helper in this SDK version: open the signed page directly.
         const win = window.open(data.url, '_blank', 'noopener');
         if (!win) console.warn('[vkplay] payment popup was blocked');
       }
