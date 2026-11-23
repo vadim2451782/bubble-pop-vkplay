@@ -1332,6 +1332,32 @@ svg.sprite {
   pointer-events: none;
 }
 
+/* Gold accent buttons: daily bonus, quests, coin continue. */
+.btn--gold {
+  background: linear-gradient(180deg, #ffe9a3 0%, #ffd05a 40%, #ffb02c 70%, #ff9b12 100%);
+  color: #46210a;
+  border: 1px solid rgba(255, 232, 160, 0.85);
+  box-shadow:
+    0 8px 20px rgba(255, 150, 0, 0.28),
+    0 2px 0 rgba(255, 255, 255, 0.4) inset;
+  font-weight: 800;
+}
+
+.btn--gold:disabled {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(230, 240, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: none;
+  cursor: default;
+}
+
+.btn--sm {
+  padding: 8px 14px;
+  min-height: 34px;
+  font-size: 13.5px;
+  border-radius: 12px;
+}
+
 .btn--xl {
   min-height: 68px;
   border-radius: 21px;

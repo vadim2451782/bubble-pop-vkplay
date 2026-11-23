@@ -582,6 +582,7 @@ function useCosmetic(kind, id) {
   }
   store.useCosmetic(kind, id);
   ui.applyTheme();
+  renderer.setSkin(store.skin.color);
   ui.renderShopExtras();
   audio.play('click');
   ui.toast('Применено');
@@ -1443,6 +1444,10 @@ platform.onConflict = () => {
 };
 
 bootPlatform();
+
+// Cosmetics apply from the very first frame.
+renderer.setSkin(store.skin.color);
+ui.applyTheme();
 
 /* Store build (Google Play): native ads + internet gate ------------------ */
 

@@ -238,6 +238,8 @@ export class Renderer {
     this.time = 0;
     this.game = null;
     this.layout = null;
+    /** Cosmetic skin of the cannon barrel (null = default steel). */
+    this.skinColor = null;
     this.sprites = new Map();
     this.stars = [];
     this.particles = [];
@@ -860,6 +862,23 @@ export class Renderer {
     ctx.restore();
   }
 
+  /** Cannon skin: recolours the barrel highlight and the muzzle ring. */
+  setSkin(color) {
+    this.skinColor = color || null;
+  }
+
+  mixSkin(base, fallback) {
+    const parse = (hex) => {
+      const text = String(hex).replace('#', '');
+      if (text.length !== 6) return null;
+      return [0, 2, 4].map((i) => parseInt(text.slice(i, i + 2), 16));
+    };
+    const a = parse(base);
+    const b = parse(fallback);
+    if (!a || !b) return fallback;
+    const mixed = a.map((value, index) => Math.round(value * 0.55 + b[index] * 0.45));
+    return `rgb(${mixed[0]}, ${mixed[1]}, ${mixed[2]})`;
+  }
   drawShooter(view) {
     const ctx = this.ctx;
     const layout = this.layout;
@@ -933,7 +952,7 @@ export class Renderer {
     roundRect(ctx, -barrelWidth / 2, -barrelLength + R * 0.2, barrelWidth, barrelLength, R * 0.4);
     const barrel = ctx.createLinearGradient(-barrelWidth / 2, 0, barrelWidth / 2, 0);
     barrel.addColorStop(0, '#0c1f43');
-    barrel.addColorStop(0.28, '#3f639b');
+    barrel.addColorStop(0.28, this.skinColor ? this.mixSkin(this.skinColor, '#3f639b') : '#3f639b');
     barrel.addColorStop(0.5, '#7598c8');
     barrel.addColorStop(0.72, '#2c4c7e');
     barrel.addColorStop(1, '#0a1938');
@@ -945,7 +964,7 @@ export class Renderer {
     // Muzzle ring.
     roundRect(ctx, -barrelWidth * 0.64, -barrelLength + R * 0.02, barrelWidth * 1.28, R * 0.38, R * 0.18);
     const rim = ctx.createLinearGradient(0, -barrelLength, 0, -barrelLength + R * 0.4);
-    rim.addColorStop(0, '#a9cdf7');
+    rim.addColorStop(0, this.skinColor || '#a9cdf7');
     rim.addColorStop(1, '#3d6194');
     ctx.fillStyle = rim;
     ctx.fill();
