@@ -1231,6 +1231,9 @@ bootStoreBuild();
 
 async function bootVkPlay() {
   if (window.__VKPLAY__ !== true) return;
+  // VK Play rejects projects with ad integrations: drop the rewarded block
+  // from the DOM entirely, not just hide it.
+  document.getElementById('shopCoinsAd')?.remove();
   await vkplay.init();
   if (!vkplay.available) {
     console.info('[vkplay] payments are not configured — the shop stays hidden.');
