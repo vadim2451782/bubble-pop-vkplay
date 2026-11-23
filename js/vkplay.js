@@ -22,6 +22,7 @@ const SCRIPT_URL = `https://vkplay.ru/app/${GMRID}/static/mailui.core.js`.replac
 const STORAGE_KEY = 'vkplay.uid';
 const LOAD_TIMEOUT = 8000;
 const USER_INFO_RETRIES = 4;
+const WATCH_TIMEOUT = 120000;
 
 export class VkPlayBridge {
   constructor() {
@@ -178,9 +179,9 @@ export class VkPlayBridge {
         this.pendingProduct = null;
         return { ok: false, reason: data?.error || 'NO_URL' };
       }
-      // The signed URL is what VK Play expects: show it through the platform
-      // frame. paymentFrame(merchant_param) would start a second, unsigned
-      // billing request and the payment window fails.
+      // The signed URL is what VK Play expects. The platform overlay fails on
+      // some browsers, so open the page itself and poll the backend for the
+      // credited purchase (the payment happens in another tab).
       const frameUrl = this.api?.paymentFrameUrl || this.api?.PaymentFrameUrl;
       window.__vkplayLastUrl = data.url;
       try {
@@ -188,17 +189,41 @@ export class VkPlayBridge {
       } catch (error) {
         /* clipboard is optional */
       }
-      if (typeof frameUrl === 'function') {
+      const win = window.open(data.url, '_blank', 'noopener');
+      if (!win && typeof frameUrl === 'function') {
         frameUrl.call(this.api, { url: data.url });
-      } else {
-        const win = window.open(data.url, '_blank', 'noopener');
-        if (!win) console.warn('[vkplay] payment popup was blocked');
       }
+      this.watchPurchase(productId);
       return { ok: true, pending: true };
     } catch (error) {
       this.pendingProduct = null;
       console.warn('[vkplay] create-payment failed:', error);
       return { ok: false, reason: 'NETWORK' };
+    }
+  }
+
+  /** Polls the backend until the paid transaction for this product appears. */
+  async watchPurchase(productId) {
+    const uid = this.uid;
+    if (!uid) return;
+    const deadline = Date.now() + WATCH_TIMEOUT;
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      try {
+        const response = await fetch(`${this.apiBase}/purchase-status?uid=${encodeURIComponent(uid)}`);
+        const data = await response.json();
+        const found = (data?.purchases || []).find(
+          (item) => item.itemId === productId && !this.seenTids.has(item.tid),
+        );
+        if (found) {
+          this.seenTids.add(found.tid);
+          this.pendingProduct = null;
+          this.onPaid?.(productId, found);
+          return;
+        }
+      } catch (error) {
+        console.warn('[vkplay] purchase-status failed:', error);
+      }
     }
   }
 
