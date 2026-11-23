@@ -369,12 +369,12 @@ export class UI {
   /* ----------------------------------------------------------- coin shop */
 
   /** Coin packs and the "remove ads" product, prices from the store bridge. */
-  renderCoinShop({ packs = [], hasRemoveAds = false, removeAdsPrice = '' } = {}) {
+  renderCoinShop({ packs = [], hasRemoveAds = false, removeAdsPrice = '', action = 'buyCoinsPack' } = {}) {
     if (!this.el.coinsRow || !this.el.coinsShop) return;
     this.el.coinsShop.hidden = packs.length === 0;
     this.el.coinsRow.innerHTML = packs
       .map(
-        (pack) => `<button class="coin-pack" type="button" data-action="buyCoinsPack" data-product="${pack.id}">
+        (pack) => `<button class="coin-pack" type="button" data-action="${action}" data-product="${pack.id}">
           <b>${pack.coins} шт</b><small>${pack.price}</small>
         </button>`,
       )

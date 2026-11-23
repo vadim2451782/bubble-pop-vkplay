@@ -14,6 +14,7 @@ import { platform } from './platform.js';
 import { ads } from './ads.js';
 import { iap } from './iap.js';
 import { net } from './net.js';
+import { vkplay } from './vkplay.js';
 import { bubbleAtPoint, clampAimAngle } from './physics.js';
 
 const QA = new URLSearchParams(window.location.search).has('qa');
@@ -437,6 +438,7 @@ function openShop(from = 'menu') {
   ui.setCoins(store.coins, { bump: false });
   refreshAds();
   refreshStoreShop();
+  refreshVkPlayShop();
   // The native rewarded ad may still be loading; check again in a moment.
   setTimeout(() => refreshAds(), 4000);
 }
@@ -1064,6 +1066,9 @@ function onAction(action, data = {}) {
     case 'buyCoinsPack':
       buyCoinsPack(data.product);
       break;
+    case 'vkBuy':
+      buyViaVkPlay(data.product);
+      break;
     case 'buyRemoveAds':
       buyRemoveAds();
       break;
@@ -1221,6 +1226,61 @@ async function bootStoreBuild() {
 }
 
 bootStoreBuild();
+
+/* VK Play: in-game purchases (browser build) ----------------------------- */
+
+async function bootVkPlay() {
+  if (window.__VKPLAY__ !== true) return;
+  await vkplay.init();
+  if (!vkplay.available) {
+    console.info('[vkplay] payments are not configured — the shop stays hidden.');
+    return;
+  }
+  vkplay.onPaid = (productId) => {
+    const pack = COIN_PACKS.find((item) => item.id === productId);
+    if (!pack) return;
+    store.addCoins(pack.coins);
+    unlockAudio();
+    audio.play('buy');
+    ui.setCoins(store.coins);
+    ui.renderShop();
+    ui.renderMenu();
+    ui.toast(`+${pack.coins} монет`);
+  };
+  refreshVkPlayShop();
+}
+
+function refreshVkPlayShop() {
+  if (window.__VKPLAY__ !== true) return;
+  if (!vkplay.available) {
+    ui.renderCoinShop({});
+    return;
+  }
+  ui.renderCoinShop({
+    packs: COIN_PACKS.map((pack) => ({ id: pack.id, coins: pack.coins, price: pack.price })),
+    action: 'vkBuy',
+    hasRemoveAds: true,
+  });
+}
+
+async function buyViaVkPlay(productId) {
+  const result = await vkplay.buy(productId);
+  if (result.ok) {
+    ui.toast('Открываем окно оплаты…');
+    return;
+  }
+  if (result.reason === 'AUTH_REQUIRED') {
+    ui.toast('Войдите в аккаунт VK Play');
+    return;
+  }
+  if (result.reason === 'NOT_AVAILABLE') {
+    ui.toast('Оплата недоступна');
+    return;
+  }
+  ui.toast('Не удалось открыть оплату');
+}
+
+bootVkPlay();
 
 document.getElementById('btnOfflineRetry')?.addEventListener('click', async () => {
   const online = await net.check();
