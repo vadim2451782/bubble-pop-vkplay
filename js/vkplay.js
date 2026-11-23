@@ -173,14 +173,21 @@ export class VkPlayBridge {
         body: JSON.stringify({ productId, uid: this.uid }),
       });
       const data = await response.json();
+      console.info('[vkplay] create-payment', response.status, data?.url || data);
       if (!data?.url) {
         this.pendingProduct = null;
         return { ok: false, reason: data?.error || 'NO_URL' };
       }
-      if (this.api?.paymentFrame) {
-        this.api.paymentFrame({ merchant_param: data.merchantParam || {} });
+      // The signed URL is what VK Play expects: show it through the platform
+      // frame. paymentFrame(merchant_param) would start a second, unsigned
+      // billing request and the payment window fails.
+      const frameUrl = this.api?.paymentFrameUrl || this.api?.PaymentFrameUrl;
+      if (typeof frameUrl === 'function') {
+        frameUrl.call(this.api, { url: data.url });
       } else {
-        window.open(data.url, '_blank', 'noopener');
+        // No URL-frame helper in this SDK version: open the signed page directly.
+        const win = window.open(data.url, '_blank', 'noopener');
+        if (!win) console.warn('[vkplay] payment popup was blocked');
       }
       return { ok: true, pending: true };
     } catch (error) {
