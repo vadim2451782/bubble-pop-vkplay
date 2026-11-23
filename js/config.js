@@ -116,3 +116,63 @@ export const TUNING = {
   minAngle: 0.2, // radians away from horizontal (~11.5 degrees)
   collisionInset: 4, // px shaved from each bubble for the circle intersection
 };
+
+/* ------------------------------------------------------------ economy */
+
+/** Coin prices of the in-game services. */
+export const ECONOMY = {
+  continueCost: 50, // +5 shots after a loss, without watching an ad
+  undoCost: 25, // take the last shot back
+  shuffleCost: 75, // reshuffle colours on the board
+};
+
+/** Daily login rewards, one per day of a seven day streak. */
+export const DAILY_REWARDS = [10, 15, 20, 30, 40, 60, 100];
+
+/** Three quests a day; progress resets at local midnight. */
+export const QUESTS = [
+  { id: 'levels', title: 'Пройти 2 уровня', target: 2, reward: 30 },
+  { id: 'bubbles', title: 'Лопнуть 60 шариков', target: 60, reward: 30 },
+  { id: 'stars', title: 'Собрать 4 звезды', target: 4, reward: 40 },
+];
+
+/** Booster bundles: three of a kind for less than the single price. */
+export const BUNDLES = [
+  { id: 'bomb3', booster: 'bomb', count: 3, price: 230 },
+  { id: 'lightning3', booster: 'lightning', count: 3, price: 260 },
+  { id: 'rainbow3', booster: 'rainbow', count: 3, price: 180 },
+  { id: 'rocket3', booster: 'rocket', count: 3, price: 200 },
+];
+
+/** Field themes. `bg` is painted on the stage, `accent` tints the HUD. */
+export const THEMES = [
+  {
+    id: 'classic',
+    name: 'Классика',
+    price: 0,
+    bg: 'radial-gradient(120% 90% at 50% 0%, #1f4f9e 0%, #12306c 42%, #071736 100%)',
+    accent: '#2f8cff',
+  },
+  {
+    id: 'night',
+    name: 'Ночь',
+    price: 250,
+    bg: 'radial-gradient(120% 90% at 50% 0%, #2a2450 0%, #171336 45%, #070512 100%)',
+    accent: '#8f7bff',
+  },
+  {
+    id: 'sunset',
+    name: 'Закат',
+    price: 350,
+    bg: 'radial-gradient(120% 90% at 50% 0%, #8a3b6b 0%, #4a1f4e 45%, #150a24 100%)',
+    accent: '#ff8a5c',
+  },
+];
+
+/** Cannon skins: only the barrel colour changes, gameplay stays the same. */
+export const SKINS = [
+  { id: 'classic', name: 'Классика', price: 0, color: '#c9dcff' },
+  { id: 'gold', name: 'Золотая', price: 300, color: '#ffd35c' },
+  { id: 'neon', name: 'Неон', price: 300, color: '#7cf0ff' },
+];
+

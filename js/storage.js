@@ -10,8 +10,26 @@ import {
   SAVE_VERSION,
   CATALOG_VERSION,
   MAX_LEVEL,
+  DAILY_REWARDS,
+  QUESTS,
+  THEMES,
+  SKINS,
 } from './config.js';
 import { LEVELS } from './levels.js';
+
+/** Local calendar day as YYYY-MM-DD, used by daily rewards and quests. */
+export function dayKey(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function previousDayKey(date = new Date()) {
+  const copy = new Date(date.getTime());
+  copy.setDate(copy.getDate() - 1);
+  return dayKey(copy);
+}
 
 export function createDefaultState() {
   return {
@@ -27,6 +45,12 @@ export function createDefaultState() {
     entitlements: { removeAds: false },
     /** Processed purchase ids, so a repeated callback never pays twice. */
     purchases: [],
+    /** Daily login bonus: last claimed day and the running streak. */
+    daily: { day: '', streak: 0 },
+    /** Daily quests: the day they belong to, progress and claimed ids. */
+    quests: { day: '', progress: { levels: 0, bubbles: 0, stars: 0 }, claimed: [] },
+    /** Cosmetics: owned ids and the active theme/skin. */
+    cosmetics: { themes: ['classic'], skins: ['classic'], theme: 'classic', skin: 'classic' },
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
@@ -119,6 +143,46 @@ export class Store {
     state.purchases = Array.isArray(parsed.purchases)
       ? parsed.purchases.filter((id) => typeof id === 'string').slice(-200)
       : [];
+
+    // Daily bonus
+    state.daily.day = typeof parsed.daily?.day === 'string' ? parsed.daily.day : '';
+    state.daily.streak = int(parsed.daily?.streak, 0, 0, 7);
+
+    // Daily quests: a save from another day starts with fresh progress.
+    const today = dayKey();
+    state.quests.day = parsed.quests?.day === today ? today : today;
+    state.quests.progress = {
+      levels: int(parsed.quests?.progress?.levels, 0, 0, 9999),
+      bubbles: int(parsed.quests?.progress?.bubbles, 0, 0, 99999),
+      stars: int(parsed.quests?.progress?.stars, 0, 0, 99999),
+    };
+    state.quests.claimed = Array.isArray(parsed.quests?.claimed)
+      ? parsed.quests.claimed.filter((id) => typeof id === 'string').slice(-10)
+      : [];
+    if (parsed.quests?.day !== today) {
+      state.quests.progress = { levels: 0, bubbles: 0, stars: 0 };
+      state.quests.claimed = [];
+    } else {
+      for (const quest of QUESTS) {
+        if (state.quests.claimed.includes(quest.id)) {
+          state.quests.progress[quest.id] = Math.max(state.quests.progress[quest.id] || 0, quest.target);
+        }
+      }
+    }
+
+    // Cosmetics: only ids that exist in the catalogue are kept.
+    const themeIds = new Set(THEMES.map((item) => item.id));
+    const skinIds = new Set(SKINS.map((item) => item.id));
+    const ownedThemes = Array.isArray(parsed.cosmetics?.themes)
+      ? parsed.cosmetics.themes.filter((id) => themeIds.has(id))
+      : [];
+    const ownedSkins = Array.isArray(parsed.cosmetics?.skins)
+      ? parsed.cosmetics.skins.filter((id) => skinIds.has(id))
+      : [];
+    state.cosmetics.themes = [...new Set(['classic', ...ownedThemes])];
+    state.cosmetics.skins = [...new Set(['classic', ...ownedSkins])];
+    state.cosmetics.theme = themeIds.has(parsed.cosmetics?.theme) ? parsed.cosmetics.theme : 'classic';
+    state.cosmetics.skin = skinIds.has(parsed.cosmetics?.skin) ? parsed.cosmetics.skin : 'classic';
 
     if (parsed.levels && typeof parsed.levels === 'object') {
       const sourceToNew = new Map(LEVELS.map((level) => [level.seedId, level.id]));
@@ -227,6 +291,101 @@ export class Store {
     this.save();
     return { ok: true, coins: this.state.coins, count: this.state.boosters[id] };
   }
+
+  /* ------------------------------------------------------------ daily */
+
+  /** Index of today's reward in DAILY_REWARDS, or null when already claimed. */
+  dailyRewardIndex() {
+    if (this.state.daily.day === dayKey()) return null;
+    const yesterday = previousDayKey();
+    const streak = this.state.daily.day === yesterday ? this.state.daily.streak : 0;
+    return streak % DAILY_REWARDS.length;
+  }
+
+  dailyStreak() {
+    const yesterday = previousDayKey();
+    if (this.state.daily.day === dayKey()) return this.state.daily.streak;
+    if (this.state.daily.day === yesterday) return this.state.daily.streak;
+    return 0;
+  }
+
+  claimDaily() {
+    const index = this.dailyRewardIndex();
+    if (index === null) return { ok: false, reason: 'claimed' };
+    const reward = DAILY_REWARDS[index];
+    this.state.daily.day = dayKey();
+    this.state.daily.streak = Math.min(DAILY_REWARDS.length, index + 1);
+    this.state.coins += reward;
+    this.save();
+    return { ok: true, reward, streak: this.state.daily.streak, coins: this.state.coins };
+  }
+
+  /* ----------------------------------------------------------- quests */
+
+  questProgress(id, amount = 1) {
+    if (!(id in this.state.quests.progress)) return;
+    if (amount <= 0) return;
+    const quest = QUESTS.find((item) => item.id === id);
+    if (!quest || this.state.quests.claimed.includes(id)) return;
+    this.state.quests.progress[id] = Math.min(quest.target, this.state.quests.progress[id] + amount);
+    this.save();
+  }
+
+  questClaimed(id) {
+    return this.state.quests.claimed.includes(id);
+  }
+
+  claimQuest(id) {
+    const quest = QUESTS.find((item) => item.id === id);
+    if (!quest) return { ok: false, reason: 'unknown' };
+    if (this.state.quests.claimed.includes(id)) return { ok: false, reason: 'claimed' };
+    if ((this.state.quests.progress[id] || 0) < quest.target) return { ok: false, reason: 'progress' };
+    this.state.quests.claimed.push(id);
+    this.state.coins += quest.reward;
+    this.save();
+    return { ok: true, reward: quest.reward, coins: this.state.coins };
+  }
+
+  /* --------------------------------------------------------- cosmetics */
+
+  cosmeticPrice(kind, id) {
+    const list = kind === 'theme' ? THEMES : SKINS;
+    const item = list.find((entry) => entry.id === id);
+    return item ? item.price : 0;
+  }
+
+  ownsCosmetic(kind, id) {
+    const owned = kind === 'theme' ? this.state.cosmetics.themes : this.state.cosmetics.skins;
+    return owned.includes(id);
+  }
+
+  buyCosmetic(kind, id) {
+    const price = this.cosmeticPrice(kind, id);
+    if (this.ownsCosmetic(kind, id)) return { ok: false, reason: 'owned' };
+    if (this.state.coins < price) return { ok: false, reason: 'coins' };
+    this.state.coins -= price;
+    if (kind === 'theme') this.state.cosmetics.themes.push(id);
+    else this.state.cosmetics.skins.push(id);
+    this.save();
+    return { ok: true, coins: this.state.coins };
+  }
+
+  useCosmetic(kind, id) {
+    if (!this.ownsCosmetic(kind, id)) return false;
+    if (kind === 'theme') this.state.cosmetics.theme = id;
+    else this.state.cosmetics.skin = id;
+    this.save();
+    return true;
+  }
+
+  get theme() {
+    return THEMES.find((item) => item.id === this.state.cosmetics.theme) || THEMES[0];
+  }
+
+  get skin() {
+    return SKINS.find((item) => item.id === this.state.cosmetics.skin) || SKINS[0];
+  }
+
 
   completeLevel(id, stars, score) {
     const key = String(id);

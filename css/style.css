@@ -375,6 +375,243 @@ svg.sprite {
   margin: 0 auto;
   border-radius: 22px;
   overflow: hidden;
+  /* Cosmetics: the field theme is painted through this variable. */
+  background: var(--stage-bg, transparent);
+  transition: background 0.35s ease;
+}
+
+/* ---------------------------------------------------- quests and extras */
+
+.menu-row__quests {
+  position: relative;
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: #ff5a5a;
+  color: #fff;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
+  box-shadow: 0 3px 8px rgba(255, 60, 60, 0.45);
+}
+
+.quest-daily {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 219, 128, 0.35);
+  background: linear-gradient(135deg, rgba(76, 58, 20, 0.55), rgba(23, 36, 74, 0.85));
+}
+
+.quest-daily__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #ffe9b8;
+}
+
+.quest-daily__text b {
+  font-size: 15px;
+}
+
+.quest-daily__text small {
+  color: rgba(255, 233, 184, 0.72);
+  font-size: 12.5px;
+}
+
+.quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quest {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 13px 15px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(17, 38, 82, 0.6);
+}
+
+.quest.is-done {
+  border-color: rgba(255, 219, 128, 0.3);
+}
+
+.quest.is-claimed {
+  opacity: 0.62;
+}
+
+.quest__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  grid-column: 1 / 2;
+}
+
+.quest__head b {
+  font-size: 14.5px;
+}
+
+.quest__head small {
+  color: rgba(198, 221, 255, 0.7);
+  font-size: 12px;
+}
+
+.quest__bar {
+  grid-column: 1 / 2;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.quest__bar i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #7dd3ff, #2f8cff);
+  transition: width 0.3s ease;
+}
+
+.quest > .btn,
+.quest__done {
+  grid-row: 1 / 3;
+  grid-column: 2 / 3;
+}
+
+.quest__done {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: rgba(198, 221, 255, 0.7);
+}
+
+.shop-section {
+  margin: 18px 0 6px;
+}
+
+.shop-section h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(198, 221, 255, 0.66);
+}
+
+.bundle-row {
+  display: grid;
+  gap: 8px;
+}
+
+.bundle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(17, 38, 82, 0.6);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bundle__icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #9fd0ff;
+}
+
+.bundle__text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+}
+
+.bundle__text b {
+  font-size: 14px;
+}
+
+.bundle__text small {
+  color: #8fe4a8;
+  font-size: 12px;
+}
+
+.bundle__price {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 800;
+  color: #ffd35c;
+}
+
+.cosmetic-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(102px, 1fr));
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.cosmetic {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(17, 38, 82, 0.6);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cosmetic.is-active {
+  border-color: rgba(255, 219, 128, 0.6);
+  box-shadow: 0 0 0 1px rgba(255, 219, 128, 0.25);
+}
+
+.cosmetic__swatch {
+  width: 100%;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--swatch, #123);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.cosmetic b {
+  font-size: 12.5px;
+}
+
+.cosmetic small {
+  font-size: 11.5px;
+  color: rgba(198, 221, 255, 0.7);
+}
+
+.booster--service .booster__cost {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffd35c;
 }
 
 #game {

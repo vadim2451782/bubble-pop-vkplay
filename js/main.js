@@ -2,7 +2,7 @@
  * Application controller: boots the game, wires DOM input, animation loop,
  * screen transitions, boosters, audio and PWA registration.
  */
-import { ADS_COIN_PACK, BOOSTERS, BOOSTER_ORDER, COIN_PACKS, LOSE_CONTINUE_SHOTS, MAX_LEVEL, RAINBOW, REMOVE_ADS_PRODUCT, REWARD, SCORE, TUNING } from './config.js';
+import { ADS_COIN_PACK, BOOSTERS, BOOSTER_ORDER, BUNDLES, COIN_PACKS, ECONOMY, LOSE_CONTINUE_SHOTS, MAX_LEVEL, RAINBOW, REMOVE_ADS_PRODUCT, REWARD, SCORE, TUNING } from './config.js';
 import { getLevel, getNextLevel, LEVELS } from './levels.js';
 import { createLayout } from './layout.js';
 import { Game } from './game.js';
@@ -37,6 +37,8 @@ let resolveTimer = 0;
 let rafId = 0;
 let lastTs = 0;
 let currentMetaBack = 'menu';
+/** Board state right before the last shot, for the paid undo. */
+let lastShotSnapshot = null;
 let currentSettingsBack = 'menu';
 let resizeQueued = false;
 let activePointerId = null;
@@ -204,7 +206,11 @@ function finishFlight() {
   if (!game || !view.flying) return;
   const trace = view.flying.trace;
   view.flying = null;
+  lastShotSnapshot = snapshotGame();
+  const beforePopped = game.stats.popped;
   const result = game.applyShot(trace);
+  const poppedNow = Math.max(0, game.stats.popped - beforePopped);
+  if (poppedNow > 0) store.questProgress('bubbles', poppedNow);
   if (!result) {
     refreshAim();
     return;
@@ -324,6 +330,8 @@ function finishWin() {
   const stars = Math.max(1, game.stars || 1);
   const paid = settleLevelReward('win');
   store.completeLevel(level.id, stars, game.score);
+  store.questProgress('levels', 1);
+  store.questProgress('stars', stars);
   ui.setCoins(store.coins);
   ui.renderAll();
   audio.play('win');
@@ -356,6 +364,7 @@ function finishLose() {
   audio.play('lose');
   ui.showLose({ game, reason: game.loseReason, coins: paid });
   ui.setContinueAdVisible(ads.rewardedSupported);
+  ui.setContinueCoinsVisible(store.coins >= ECONOMY.continueCost);
   ads.maybeInterstitial();
 }
 
@@ -389,6 +398,193 @@ async function continueWithAd() {
   ui.syncHud(game);
   refreshAim();
   ui.toast(`+${LOSE_CONTINUE_SHOTS} шаров`);
+}
+
+/** "+5 шаров" after a loss, paid with coins (no ad needed). */
+function continueWithCoins() {
+  if (!game || game.phase !== 'lost' || resultScreenOpen === false) return;
+  if (store.coins < ECONOMY.continueCost) {
+    ui.toast('Не хватает монет — загляните в задания');
+    return;
+  }
+  store.spendCoins(ECONOMY.continueCost);
+  ui.setCoins(store.coins);
+  game.shots += LOSE_CONTINUE_SHOTS;
+  game.phase = 'aim';
+  game.loseReason = null;
+  resultScreenOpen = false;
+  paused = false;
+  lastShotSnapshot = null;
+  ui.setContinueCoinsVisible(false);
+  ui.setContinueAdVisible(false);
+  ui.showScreen(null);
+  ui.syncHud(game);
+  refreshAim();
+  audio.play('buy');
+  ui.toast(`+${LOSE_CONTINUE_SHOTS} шаров за ${ECONOMY.continueCost} монет`);
+}
+
+/* ------------------------------------------------------- undo & shuffle */
+
+function snapshotGame() {
+  if (!game) return null;
+  const cells = [];
+  game.grid.forEachOccupied((color, r, c) => cells.push({ r, c, color }));
+  return {
+    cells,
+    shots: game.shots,
+    score: game.score,
+    current: game.current,
+    next: game.next,
+    stats: { ...game.stats },
+  };
+}
+
+function restoreSnapshot(snapshot) {
+  if (!game || !snapshot) return;
+  for (const row of game.grid.rows) row.fill(null);
+  for (const cell of snapshot.cells) game.grid.set(cell.r, cell.c, cell.color);
+  game.shots = snapshot.shots;
+  game.score = snapshot.score;
+  game.current = snapshot.current;
+  game.next = snapshot.next;
+  game.stats = { ...snapshot.stats };
+  game.phase = 'aim';
+  game.loseReason = null;
+  view.flying = null;
+  view.boosterMode = null;
+  resultScreenOpen = false;
+  paused = false;
+  ui.showScreen(null);
+  ui.syncHud(game);
+  ui.setCoins(store.coins);
+  refreshAim();
+}
+
+function undoShot() {
+  if (!game || resultScreenOpen) return;
+  if (!lastShotSnapshot) {
+    ui.toast('Пока нечего отменять');
+    return;
+  }
+  if (store.coins < ECONOMY.undoCost) {
+    ui.toast('Не хватает монет');
+    return;
+  }
+  store.spendCoins(ECONOMY.undoCost);
+  const snapshot = lastShotSnapshot;
+  lastShotSnapshot = null;
+  restoreSnapshot(snapshot);
+  audio.play('click');
+  ui.toast(`Выстрел отменён · −${ECONOMY.undoCost} монет`);
+}
+
+function shuffleBoard() {
+  if (!game || game.phase !== 'aim' || resultScreenOpen) return;
+  if (store.coins < ECONOMY.shuffleCost) {
+    ui.toast('Не хватает монет');
+    return;
+  }
+  const cells = [];
+  game.grid.forEachOccupied((color, r, c) => cells.push({ r, c }));
+  if (cells.length < 2) {
+    ui.toast('Поле почти пустое');
+    return;
+  }
+  const colors = cells.map(({ r, c }) => game.grid.get(r, c));
+  const noTriples = () => {
+    for (const { r, c } of cells) {
+      const color = game.grid.get(r, c);
+      let same = 0;
+      for (const [rr, cc] of game.grid.neighbors(r, c)) {
+        if (game.grid.get(rr, cc) === color) same += 1;
+      }
+      if (same >= 2) return false;
+    }
+    return true;
+  };
+  let attempt = 0;
+  do {
+    for (let i = colors.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [colors[i], colors[j]] = [colors[j], colors[i]];
+    }
+    cells.forEach((cell, index) => game.grid.set(cell.r, cell.c, colors[index]));
+    attempt += 1;
+  } while (!noTriples() && attempt < 40);
+
+  store.spendCoins(ECONOMY.shuffleCost);
+  lastShotSnapshot = null;
+  ui.setCoins(store.coins);
+  ui.syncHud(game);
+  refreshAim();
+  audio.play('click');
+  ui.toast(`Поле перемешано · −${ECONOMY.shuffleCost} монет`);
+}
+
+/* --------------------------------------------------------- quests & shop */
+
+function openQuests() {
+  ui.showScreen('quests');
+  ui.renderQuests();
+  audio.play('click');
+}
+
+function claimDaily() {
+  const result = store.claimDaily();
+  if (!result.ok) {
+    ui.toast('Бонус уже получен — приходите завтра');
+    return;
+  }
+  ui.setCoins(store.coins);
+  ui.renderQuests();
+  audio.play('buy');
+  ui.toast(`Ежедневный бонус: +${result.reward} монет`);
+}
+
+function claimQuest(id) {
+  const result = store.claimQuest(id);
+  if (!result.ok) {
+    ui.toast('Задание ещё не выполнено');
+    return;
+  }
+  ui.setCoins(store.coins);
+  ui.renderQuests();
+  audio.play('buy');
+  ui.toast(`Задание выполнено: +${result.reward} монет`);
+}
+
+function buyBundle(id) {
+  const bundle = BUNDLES.find((item) => item.id === id);
+  if (!bundle) return;
+  if (store.coins < bundle.price) {
+    ui.toast('Не хватает монет');
+    return;
+  }
+  store.spendCoins(bundle.price);
+  store.addBooster(bundle.booster, bundle.count);
+  ui.setCoins(store.coins);
+  ui.renderShop();
+  ui.syncHud(game);
+  audio.play('buy');
+  ui.toast(`+${bundle.count} × ${BOOSTERS[bundle.booster].name}`);
+}
+
+function useCosmetic(kind, id) {
+  if (!store.ownsCosmetic(kind, id)) {
+    const result = store.buyCosmetic(kind, id);
+    if (!result.ok) {
+      ui.toast(result.reason === 'coins' ? 'Не хватает монет' : 'Уже куплено');
+      return;
+    }
+    ui.setCoins(store.coins);
+    audio.play('buy');
+  }
+  store.useCosmetic(kind, id);
+  ui.applyTheme();
+  ui.renderShopExtras();
+  audio.play('click');
+  ui.toast('Применено');
 }
 
 function pauseGame() {
@@ -1008,6 +1204,33 @@ function onAction(action, data = {}) {
     case 'levels':
       openLevels();
       break;
+    case 'quests':
+      openQuests();
+      break;
+    case 'questsBack':
+      returnToMenu();
+      break;
+    case 'claimDaily':
+      claimDaily();
+      break;
+    case 'claimQuest':
+      claimQuest(data.quest);
+      break;
+    case 'buyBundle':
+      buyBundle(data.bundle);
+      break;
+    case 'cosmetic':
+      useCosmetic(data.kind === 'theme' ? 'theme' : 'skin', data.id);
+      break;
+    case 'continueCoins':
+      continueWithCoins();
+      break;
+    case 'undoShot':
+      undoShot();
+      break;
+    case 'shuffleBoard':
+      shuffleBoard();
+      break;
     case 'toggleAllWorlds':
       ui.toggleAllWorlds();
       audio.play('click');
@@ -1394,6 +1617,7 @@ if (QA) {
       view.aimAngle = clampAimAngle(Number(angle));
       const trace = game.createShot(view.aimAngle);
       if (!trace) return null;
+      lastShotSnapshot = snapshotGame();
       const result = game.applyShot(trace);
       handleShotResult(result, trace);
       return result;

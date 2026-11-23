@@ -16,6 +16,7 @@
   <svg class="sprite" aria-hidden="true">
     <defs>
       <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4.2" height="14" rx="2.1" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="2.1" fill="currentColor"/></symbol>
+      <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M4 7h4l8 10h4M4 17h4l2.5-3M16 7h4M18 5l2 2-2 2M18 15l2 2-2 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
       <symbol id="i-play" viewBox="0 0 24 24"><path d="M8.5 5.2v13.6L20 12z" fill="currentColor"/></symbol>
       <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
       <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
@@ -105,6 +106,14 @@
             <span class="booster__icon"><svg class="icon"><use href="#i-rocket"></use></svg></span>
             <span class="booster__count" data-count="rocket">0</span>
           </button>
+          <button class="booster booster--service" data-action="undoShot" type="button" aria-label="Отменить последний выстрел">
+            <span class="booster__icon"><svg class="icon"><use href="#i-back"></use></svg></span>
+            <span class="booster__cost">25</span>
+          </button>
+          <button class="booster booster--service" data-action="shuffleBoard" type="button" aria-label="Перемешать поле">
+            <span class="booster__icon"><svg class="icon"><use href="#i-shuffle"></use></svg></span>
+            <span class="booster__cost">75</span>
+          </button>
         </div>
       </footer>
     </div>
@@ -156,12 +165,35 @@
             <button class="btn btn--ghost" data-action="shop" type="button">
               <svg class="icon"><use href="#i-shop"></use></svg><span>Магазин</span>
             </button>
+            <button class="btn btn--ghost menu-row__quests" data-action="quests" type="button">
+              <svg class="icon"><use href="#i-trophy"></use></svg><span>Задания</span>
+              <i class="badge" id="questsBadge" hidden>0</i>
+            </button>
           </div>
         </div>
 
         <footer class="menu-foot">
           <span>1000 уровней · 4 бустера</span>
         </footer>
+      </section>
+
+      <section class="screen screen--meta" data-screen="quests">
+        <header class="meta-head">
+          <button class="icon-btn" data-action="questsBack" type="button" aria-label="Назад">
+            <svg class="icon"><use href="#i-back"></use></svg>
+          </button>
+          <h2>Задания</h2>
+          <div class="coin-chip"><svg class="icon"><use href="#i-coin"></use></svg><span class="js-coins">0</span></div>
+        </header>
+        <div class="quest-daily" id="questDaily">
+          <div class="quest-daily__text">
+            <b>Ежедневный бонус</b>
+            <small id="questDailySub">Заходите каждый день — награда растёт</small>
+          </div>
+          <button class="btn btn--gold btn--sm" data-action="claimDaily" id="btnClaimDaily" type="button">Забрать</button>
+        </div>
+        <div class="quest-list" id="questList"></div>
+        <p class="screen-note">Задания обновляются каждый день в полночь. Награда — монеты на бустеры и темы.</p>
       </section>
 
       <section class="screen screen--meta" data-screen="levels">
@@ -201,6 +233,16 @@
           <span>Посмотреть рекламу и получить <b id="shopCoinsAdAmount">+15 монет</b></span>
         </button>
         <div class="shop-list" id="shopList"></div>
+        <div class="shop-section" id="shopBundles">
+          <h3>Наборы бустеров</h3>
+          <div class="bundle-row" id="bundleRow"></div>
+        </div>
+        <div class="shop-section" id="shopCosmetics">
+          <h3>Темы поля</h3>
+          <div class="cosmetic-row" id="themeRow"></div>
+          <h3>Скины пушки</h3>
+          <div class="cosmetic-row" id="skinRow"></div>
+        </div>
         <div class="ad-banner" id="adBanner" hidden></div>
         <p class="screen-note">Купленные бустеры хранятся в инвентаре и доступны на игровом поле.</p>
       </section>
@@ -304,6 +346,10 @@
             <div><small>Монеты</small><b id="loseCoins">0</b></div>
             <div><small>Осталось</small><b id="loseLeft">0</b></div>
           </div>
+          <button class="btn btn--gold" id="btnContinueCoins" data-action="continueCoins" type="button">
+            <svg class="icon"><use href="#i-coin"></use></svg>
+            <span>Продолжить за <b id="continueCost">50</b> монет</span>
+          </button>
           <button class="btn btn--ad" id="btnContinueAd" data-action="continueAd" type="button" hidden>
             <svg class="icon"><use href="#i-play"></use></svg>
             <span>+5 шаров за рекламу</span>

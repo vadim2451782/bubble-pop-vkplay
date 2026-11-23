@@ -2,7 +2,7 @@
  * DOM presentation: screens, HUD, level map, shop, settings and toasts.
  * Game logic stays in Game; this module only reflects it.
  */
-import { ADS_COIN_PACK, BOOSTER_ORDER, BOOSTERS } from './config.js';
+import { ADS_COIN_PACK, BOOSTER_ORDER, BOOSTERS, BUNDLES, DAILY_REWARDS, ECONOMY, QUESTS, SKINS, THEMES } from './config.js';
 import { LEVELS, LEVELS_PER_WORLD, WORLDS } from './levels.js';
 
 const $ = (id) => document.getElementById(id);
@@ -51,6 +51,15 @@ export class UI {
       levelsProgressFill: $('levelsProgressFill'),
       levelsProgressText: $('levelsProgressText'),
       shopList: $('shopList'),
+      bundleRow: $('bundleRow'),
+      themeRow: $('themeRow'),
+      skinRow: $('skinRow'),
+      questsBadge: $('questsBadge'),
+      questDailySub: $('questDailySub'),
+      questList: $('questList'),
+      btnClaimDaily: $('btnClaimDaily'),
+      btnContinueCoins: $('btnContinueCoins'),
+      continueCost: $('continueCost'),
       menuStars: $('menuStars'),
       menuStarsWrap: $('menuStarsWrap'),
       menuStarsDot: $('menuStarsDot'),
@@ -195,6 +204,7 @@ export class UI {
       void this.el.hudCoinChip.offsetWidth;
       this.el.hudCoinChip.classList.add('is-bump');
     }
+    this.updateQuestBadge();
   }
 
   /* ---------------------------------------------------------------- menu */
@@ -204,7 +214,109 @@ export class UI {
     this.renderMenu();
     this.renderLevels();
     this.renderShop();
+    this.renderQuests();
+    this.applyTheme();
     this.applySettings();
+  }
+
+  /* --------------------------------------------------------- cosmetics */
+
+  /** Paints the chosen field theme through a CSS variable. */
+  applyTheme() {
+    const theme = this.store.theme;
+    document.documentElement.style.setProperty('--stage-bg', theme.bg);
+    document.documentElement.style.setProperty('--stage-accent', theme.accent);
+  }
+
+  /* ------------------------------------------------------------ quests */
+
+  updateQuestBadge() {
+    if (!this.el.questsBadge) return;
+    let ready = 0;
+    if (this.store.dailyRewardIndex() !== null) ready += 1;
+    for (const quest of QUESTS) {
+      if (!this.store.questClaimed(quest.id) && (this.store.state.quests.progress[quest.id] || 0) >= quest.target) {
+        ready += 1;
+      }
+    }
+    this.el.questsBadge.hidden = ready === 0;
+    this.el.questsBadge.textContent = String(ready);
+  }
+
+  renderQuests() {
+    if (!this.el.questList) return;
+    const index = this.store.dailyRewardIndex();
+    const streak = this.store.dailyStreak();
+    const reward = index === null ? DAILY_REWARDS[Math.min(streak, DAILY_REWARDS.length - 1)] : DAILY_REWARDS[index];
+    const dayLabel = index === null ? 'получено сегодня' : `день ${(streak % DAILY_REWARDS.length) + 1} · +${reward} монет`;
+    this.el.questDailySub.textContent = index === null ? `Серия: ${streak} дн. · приходите завтра` : dayLabel;
+    if (this.el.btnClaimDaily) {
+      this.el.btnClaimDaily.disabled = index === null;
+      this.el.btnClaimDaily.textContent = index === null ? 'Получено' : 'Забрать';
+    }
+
+    this.el.questList.innerHTML = QUESTS.map((quest) => {
+      const progress = Math.min(quest.target, this.store.state.quests.progress[quest.id] || 0);
+      const claimed = this.store.questClaimed(quest.id);
+      const done = progress >= quest.target;
+      const percent = Math.round((progress / quest.target) * 100);
+      const button = claimed
+        ? '<span class="quest__done">Получено</span>'
+        : `<button class="btn btn--gold btn--sm" data-action="claimQuest" data-quest="${quest.id}" type="button" ${done ? '' : 'disabled'}>+${quest.reward}</button>`;
+      return `
+        <article class="quest${done ? ' is-done' : ''}${claimed ? ' is-claimed' : ''}">
+          <div class="quest__head"><b>${quest.title}</b><small>${progress} из ${quest.target}</small></div>
+          <div class="quest__bar"><i style="width:${percent}%"></i></div>
+          ${button}
+        </article>`;
+    }).join('');
+
+    this.updateQuestBadge();
+  }
+
+  /* --------------------------------------------------------- shop extras */
+
+  renderShopExtras() {
+    if (this.el.bundleRow) {
+      this.el.bundleRow.innerHTML = BUNDLES.map((bundle) => {
+        const booster = BOOSTERS[bundle.booster];
+        const full = booster.price * bundle.count;
+        const save = full - bundle.price;
+        return `
+          <button class="bundle" data-action="buyBundle" data-bundle="${bundle.id}" type="button">
+            <span class="bundle__icon"><svg class="icon"><use href="#i-${bundle.booster === 'lightning' ? 'lightning' : bundle.booster}"></use></svg></span>
+            <span class="bundle__text"><b>${bundle.count} × ${booster.name}</b><small>выгода ${save} монет</small></span>
+            <span class="bundle__price"><svg class="icon"><use href="#i-coin"></use></svg>${bundle.price}</span>
+          </button>`;
+      }).join('');
+    }
+
+    const cosmeticRow = (row, list, kind) => {
+      if (!row) return;
+      row.innerHTML = list.map((item) => {
+        const owned = this.store.ownsCosmetic(kind, item.id);
+        const active = kind === 'theme'
+          ? this.store.state.cosmetics.theme === item.id
+          : this.store.state.cosmetics.skin === item.id;
+        const label = active ? 'Выбрано' : owned ? 'Выбрать' : `${item.price}`;
+        return `
+          <button class="cosmetic${active ? ' is-active' : ''}${owned ? ' is-owned' : ''}"
+            data-action="cosmetic" data-kind="${kind}" data-id="${item.id}" type="button"
+            ${kind === 'theme' ? `style="--swatch:${item.bg}"` : `style="--swatch:${item.color}"`}>
+            <span class="cosmetic__swatch"></span>
+            <b>${item.name}</b>
+            <small>${label}${active || owned ? '' : ' монет'}</small>
+          </button>`;
+      }).join('');
+    };
+    cosmeticRow(this.el.themeRow, THEMES, 'theme');
+    cosmeticRow(this.el.skinRow, SKINS, 'skin');
+  }
+
+  setContinueCoinsVisible(visible) {
+    if (!this.el.btnContinueCoins) return;
+    this.el.btnContinueCoins.hidden = !visible;
+    if (this.el.continueCost) this.el.continueCost.textContent = String(ECONOMY.continueCost);
   }
 
   renderMenu() {
@@ -372,6 +484,7 @@ export class UI {
         </article>`;
     });
     this.el.shopList.innerHTML = items.join('');
+    this.renderShopExtras();
   }
 
   /** Called by the controller when the platform reports ad availability. */
