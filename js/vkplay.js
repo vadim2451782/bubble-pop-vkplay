@@ -5,19 +5,23 @@
  * configured (window.__VKPLAY_API__). Outside the platform, or without a
  * backend, the shop stays hidden and the game plays exactly as before.
  *
- * Flow (per VK Play docs):
- *   iframeApi handshake → getLoginStatus → buy()
- *   buy → POST {API}/create-payment → payment URL → platform payment window
- *   platform → GET {API}/callback (server side) → paymentReceivedCallback
+ * Auth flow (per VK Play docs):
+ *   getLoginStatus -> 0 (guest) / 1 (authorized, not registered)
+ *                   / 2 (registered) / 3 (registered + bought the game)
+ *   status 1 -> registerUser() (EULA window) -> userInfoCallback with uid
+ *   status 2+ -> userInfo() -> uid
+ *
+ * The uid is cached in localStorage: VK Play reloads the iframe after auth,
+ * and a cached uid breaks the "login -> reload -> login" loop.
  */
 
 import { COIN_PACKS } from './config.js';
 
 const GMRID = '52062';
-const SCRIPT_URL = `https://vkplay.ru/app/${GMRID}/static/mailru.core.js`;
+const SCRIPT_URL = `https://vkplay.ru/app/${GMRID}/static/mailui.core.js`.replace('mailui', 'mailru');
+const STORAGE_KEY = 'vkplay.uid';
 const LOAD_TIMEOUT = 8000;
-
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const USER_INFO_RETRIES = 4;
 
 export class VkPlayBridge {
   constructor() {
@@ -27,12 +31,13 @@ export class VkPlayBridge {
     this.apiBase = window.__VKPLAY_API__ || '';
     this.ready = false;
     this.api = null;
-    this.uid = null;
+    this.uid = Number(localStorage.getItem(STORAGE_KEY)) || null;
     this.loginStatus = null;
+    this.authRequested = false;
     this.pendingProduct = null;
     this.seenTids = new Set();
     this.onPaid = null;
-    this.onError = null;
+    this.onAuth = null;
   }
 
   get available() {
@@ -75,17 +80,9 @@ export class VkPlayBridge {
   handshake() {
     const callbacks = {
       appid: Number(GMRID),
-      getLoginStatusCallback: (status) => {
-        this.loginStatus = Number(status?.loginStatus ?? -1);
-      },
-      userInfoCallback: (info) => {
-        const uid = Number(info?.uid);
-        if (Number.isFinite(uid)) this.uid = uid;
-      },
-      registerUserCallback: (info) => {
-        const uid = Number(info?.uid);
-        if (Number.isFinite(uid)) this.uid = uid;
-      },
+      getLoginStatusCallback: (status) => this.onStatus(status),
+      userInfoCallback: (info) => this.onUser(info),
+      registerUserCallback: (info) => this.onUser(info),
       paymentReceivedCallback: (data) => this.handlePayment(data),
       paymentWindowClosedCallback: () => {
         this.pendingProduct = null;
@@ -99,19 +96,65 @@ export class VkPlayBridge {
   askLoginStatus() {
     try {
       this.api.getLoginStatus();
-      this.api.userInfo();
     } catch (error) {
-      console.warn('[vkplay] login status failed:', error);
+      console.warn('[vkplay] getLoginStatus failed:', error);
     }
   }
 
-  /** Opens the platform auth window; the page reloads afterwards (VK Play quirk). */
-  login() {
+  onStatus(status) {
+    const value = Number(status?.loginStatus ?? -1);
+    this.loginStatus = value;
+    console.info('[vkplay] loginStatus =', value);
+    if (value === 1) {
+      // Authorized but not registered: VK Play shows the EULA window.
+      try {
+        this.api.registerUser();
+      } catch (error) {
+        console.warn('[vkplay] registerUser failed:', error);
+      }
+      return;
+    }
+    if (value >= 2) this.requestUserInfo(USER_INFO_RETRIES);
+  }
+
+  onUser(info) {
+    const uid = Number(info?.uid);
+    if (Number.isFinite(uid) && uid > 0) {
+      this.uid = uid;
+      try {
+        localStorage.setItem(STORAGE_KEY, String(uid));
+      } catch (error) {
+        /* private mode */
+      }
+      console.info('[vkplay] uid =', uid);
+      this.onAuth?.(uid);
+    } else {
+      console.warn('[vkplay] userInfo without uid:', info);
+    }
+  }
+
+  requestUserInfo(attempts) {
+    if (this.uid || attempts <= 0) return;
     try {
-      this.api?.authUser();
+      this.api.userInfo();
+    } catch (error) {
+      console.warn('[vkplay] userInfo failed:', error);
+    }
+    setTimeout(() => this.requestUserInfo(attempts - 1), 1500);
+  }
+
+  /** Asks the platform to log the player in; never loops on repeated clicks. */
+  ensureAuth() {
+    if (this.uid) return true;
+    if (this.authRequested) return false;
+    this.authRequested = true;
+    try {
+      if (this.loginStatus === 1) this.api.registerUser();
+      else this.api.authUser();
     } catch (error) {
       console.warn('[vkplay] auth failed:', error);
     }
+    return false;
   }
 
   /** Returns { ok, pending } — the item is credited on paymentReceivedCallback. */
@@ -119,8 +162,7 @@ export class VkPlayBridge {
     const pack = COIN_PACKS.find((item) => item.id === productId);
     if (!pack) return { ok: false, reason: 'UNKNOWN_PRODUCT' };
     if (!this.available) return { ok: false, reason: 'NOT_AVAILABLE' };
-    if (!this.uid) {
-      this.login();
+    if (!this.uid && !this.ensureAuth()) {
       return { ok: false, reason: 'AUTH_REQUIRED' };
     }
     this.pendingProduct = productId;

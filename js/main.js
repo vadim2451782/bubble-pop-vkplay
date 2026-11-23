@@ -1247,6 +1247,7 @@ async function bootVkPlay() {
     ui.renderMenu();
     ui.toast(`+${pack.coins} монет`);
   };
+  vkplay.onAuth = () => refreshVkPlayShop();
   refreshVkPlayShop();
 }
 
