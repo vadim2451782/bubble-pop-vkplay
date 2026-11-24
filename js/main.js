@@ -168,8 +168,12 @@ function refreshGameBanner() {
     ads.hideBanner();
     return;
   }
-  ui.setBannerReserved(true);
-  ads.showBanner({ width: Math.min(window.innerWidth || 360, 680) });
+  const bannerWidth = Math.min(window.innerWidth || 360, 680);
+  ui.setBannerReserved(true, 58);
+  ads.bannerHeight(bannerWidth).then((height) => {
+    if (height > 0) ui.setBannerReserved(true, height + 10);
+  });
+  ads.showBanner({ width: bannerWidth });
 }
 
 function hideGameBanner() {
@@ -727,8 +731,10 @@ async function refreshStoreShop() {
   });
 
   if (ads.bannerSupported && !store.hasRemoveAds) {
-    ui.setBannerReserved(true);
-    const shown = await ads.showBanner({ width: Math.min(window.innerWidth || 360, 680) });
+    const bannerWidth = Math.min(window.innerWidth || 360, 680);
+    const bannerH = await ads.bannerHeight(bannerWidth);
+    ui.setBannerReserved(true, bannerH > 0 ? bannerH + 10 : 58);
+    const shown = await ads.showBanner({ width: bannerWidth });
     if (!shown) ui.setBannerReserved(false);
     return;
   }

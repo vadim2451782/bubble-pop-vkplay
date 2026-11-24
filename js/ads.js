@@ -74,6 +74,18 @@ export class Ads {
    * Shows the adaptive banner inside the reserved slot. `rect` is the slot's
    * bounding box in CSS pixels; the native side converts it to dp.
    */
+  /** Height (dp ≈ CSS px) the native banner needs for this width. */
+  async bannerHeight(width) {
+    if (!this.native?.getBannerHeight) return 0;
+    try {
+      const result = await this.native.getBannerHeight({ width: Math.round(width || 0) });
+      return Number(result?.height) || 0;
+    } catch (error) {
+      console.warn('[ads] banner height failed:', error);
+      return 0;
+    }
+  }
+
   async showBanner(rect) {
     if (!this.bannerSupported || this.removeAds) return false;
     if (this.bannerVisible) return true;

@@ -550,9 +550,10 @@ export class UI {
     return { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
   }
 
-  /** Reserves bottom space for the native banner strip (body padding). */
-  setBannerReserved(visible) {
+  /** Reserves bottom space for the native banner strip (exact ad height). */
+  setBannerReserved(visible, height = 58) {
     document.body.classList.toggle('has-banner', Boolean(visible));
+    document.documentElement.style.setProperty('--banner-h', `${Math.round(height)}px`);
   }
 
   /** Reserved slot under the board; the native banner sits exactly here. */
