@@ -291,7 +291,7 @@ function buildLevel(spec, index) {
   const baseShots = Math.max(spec.shots, Math.ceil(totalBubbles * 1.15) + 36);
   // Shorter levels: the budget is halved (with a small floor so a level is
   // never unplayable by construction).
-  const shots = Math.max(12, Math.round(baseShots / 2));
+  const shots = Math.max(10, Math.round(baseShots * 0.3));
   const palette = COLORS.slice(0, spec.colors).map((c) => c.id);
 
   return {
