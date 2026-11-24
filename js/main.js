@@ -141,7 +141,7 @@ function queueResize() {
 const DEMO_ADS = window.__DEMO_ADS__ === true;
 let demoBannerEl = null;
 
-function setDemoAdStrip(visible) {
+function setDemoAdStrip(visible, reserve = true) {
   if (!DEMO_ADS) return;
   if (!demoBannerEl) {
     demoBannerEl = document.createElement('div');
@@ -153,10 +153,19 @@ function setDemoAdStrip(visible) {
     document.querySelector('.app')?.append(demoBannerEl);
   }
   demoBannerEl.hidden = !visible;
-  ui.setBannerReserved(visible);
+  if (reserve) ui.setBannerReserved(visible);
 }
 
-/** Banner strip at the bottom of the screen while a level is played. */
+/** Width of the game column the ad has to match. */
+function bannerWidth() {
+  return Math.min(window.innerWidth || 360, 680);
+}
+
+/**
+ * Banner strip at the bottom of the screen while a level is played.
+ * The strip height is measured once per width and cached: reserving a guessed
+ * height first and correcting it later made the whole board jump.
+ */
 function refreshGameBanner() {
   if (DEMO_ADS) {
     setDemoAdStrip(Boolean(game) && !resultScreenOpen && !paused);
@@ -168,12 +177,28 @@ function refreshGameBanner() {
     ads.hideBanner();
     return;
   }
-  const bannerWidth = Math.min(window.innerWidth || 360, 680);
-  ui.setBannerReserved(true, 58);
-  ads.bannerHeight(bannerWidth).then((height) => {
-    if (height > 0) ui.setBannerReserved(true, height + 10);
+  const width = bannerWidth();
+  const known = ads.bannerHeightCached(width);
+  if (known > 0) {
+    ui.setBannerReserved(true, known + 10);
+    ads.showBanner({ width });
+    return;
+  }
+  // First show for this width: measure, then reserve and show in one step.
+  ads.bannerHeight(width).then((height) => {
+    if (!game || resultScreenOpen || paused) return;
+    ui.setBannerReserved(true, (height > 0 ? height : 58) + 10);
+    ads.showBanner({ width });
   });
-  ads.showBanner({ width: bannerWidth });
+}
+
+/** Hides the ad but keeps the strip reserved (result screens, no layout jump). */
+function pauseGameBanner() {
+  if (DEMO_ADS) {
+    setDemoAdStrip(false, false);
+    return;
+  }
+  ads.hideBanner();
 }
 
 function hideGameBanner() {
@@ -383,7 +408,7 @@ function settleLevelReward(outcome) {
 function finishWin() {
   if (!game || game.phase !== 'won' || resultScreenOpen) return;
   resultScreenOpen = true;
-  hideGameBanner();
+  pauseGameBanner();
   paused = true;
   const level = game.level;
   const stars = Math.max(1, game.stars || 1);
@@ -418,7 +443,7 @@ function finishWin() {
 function finishLose() {
   if (!game || game.phase !== 'lost' || resultScreenOpen) return;
   resultScreenOpen = true;
-  hideGameBanner();
+  pauseGameBanner();
   paused = true;
   const paid = settleLevelReward('lose');
   audio.play('lose');
@@ -1521,6 +1546,9 @@ ui.applyTheme();
 async function bootStoreBuild() {
   if (!window.__STORE__) return;
   await ads.init();
+  // Measure the banner strip once at boot: reserving a guessed height later
+  // made the whole board jump when the real ad height arrived.
+  ads.bannerHeight(bannerWidth());
   await iap.init();
   ads.setRemoveAds(store.hasRemoveAds);
   if (iap.ready) {

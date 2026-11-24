@@ -1,11 +1,11 @@
 /**
  * Ads facade for both builds.
  *
- *   • Pikabu build  — delegates to the platform SDK (js/platform.js);
- *   • Google Play build — talks to the native Android plugin `NativeAds`
+ *   вЂў Pikabu build  вЂ” delegates to the platform SDK (js/platform.js);
+ *   вЂў Google Play build вЂ” talks to the native Android plugin `NativeAds`
  *     (AdMob / Yandex Mobile Ads live behind it), or to the community
  *     `AdMob` plugin when it is installed;
- *   • plain browser — reports "nothing available", the UI hides ad buttons.
+ *   вЂў plain browser вЂ” reports "nothing available", the UI hides ad buttons.
  *
  * The game only ever sees this interface, so a broken or missing ad bridge
  * never breaks gameplay.
@@ -24,6 +24,8 @@ export class Ads {
     this.ready = false;
     this.removeAds = false;
     this.bannerVisible = false;
+    /** Cached banner height per column width (dp в‰€ CSS px). */
+    this.bannerHeights = new Map();
   }
 
   get enabled() {
@@ -45,7 +47,7 @@ export class Ads {
     }
     const bridge = this.native || this.admob;
     if (!bridge) {
-      console.warn('[ads] native ad bridge is not installed — ads stay hidden.');
+      console.warn('[ads] native ad bridge is not installed вЂ” ads stay hidden.');
       return this;
     }
     try {
@@ -74,16 +76,25 @@ export class Ads {
    * Shows the adaptive banner inside the reserved slot. `rect` is the slot's
    * bounding box in CSS pixels; the native side converts it to dp.
    */
-  /** Height (dp ≈ CSS px) the native banner needs for this width. */
+  /** Height (dp в‰€ CSS px) the native banner needs for this width. */
   async bannerHeight(width) {
+    const key = Math.round(width || 0);
+    if (this.bannerHeights.has(key)) return this.bannerHeights.get(key);
     if (!this.native?.getBannerHeight) return 0;
     try {
-      const result = await this.native.getBannerHeight({ width: Math.round(width || 0) });
-      return Number(result?.height) || 0;
+      const result = await this.native.getBannerHeight({ width: key });
+      const height = Number(result?.height) || 0;
+      if (height > 0) this.bannerHeights.set(key, height);
+      return height;
     } catch (error) {
       console.warn('[ads] banner height failed:', error);
       return 0;
     }
+  }
+
+  /** Known banner height without awaiting the bridge (0 until measured). */
+  bannerHeightCached(width) {
+    return this.bannerHeights.get(Math.round(width || 0)) || 0;
   }
 
   async showBanner(rect) {
