@@ -867,6 +867,18 @@ export class Renderer {
     this.skinColor = color || null;
   }
 
+  /** Lightens (amount > 0) or darkens (amount < 0) a hex colour. */
+  shadeSkin(hex, amount) {
+    const text = String(hex).replace('#', '');
+    if (text.length !== 6) return hex;
+    const rgb = [0, 2, 4].map((i) => {
+      const value = parseInt(text.slice(i, i + 2), 16);
+      const target = amount >= 0 ? 255 : 0;
+      return Math.round(value + (target - value) * Math.abs(amount));
+    });
+    return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+  }
+
   mixSkin(base, fallback) {
     const parse = (hex) => {
       const text = String(hex).replace('#', '');
@@ -896,8 +908,9 @@ export class Renderer {
         : null;
 
     // Soft glow under the cannon.
+    const skin = this.skinColor;
     const underGlow = ctx.createRadialGradient(pivotX, pivotY + R * 0.2, 2, pivotX, pivotY + R * 0.2, R * 3.4);
-    underGlow.addColorStop(0, color ? rgba(color.base, 0.22) : 'rgba(150, 210, 255, 0.18)');
+    underGlow.addColorStop(0, skin ? rgba(skin, 0.38) : color ? rgba(color.base, 0.22) : 'rgba(150, 210, 255, 0.18)');
     underGlow.addColorStop(0.55, 'rgba(70, 140, 255, 0.06)');
     underGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = underGlow;
@@ -909,9 +922,9 @@ export class Renderer {
     ctx.beginPath();
     ctx.ellipse(0, 0, R * 2.15, R * 1.5, 0, 0, TAU);
     const plate = ctx.createLinearGradient(0, -R * 1.4, 0, R * 1.4);
-    plate.addColorStop(0, '#486a9f');
-    plate.addColorStop(0.35, '#294b82');
-    plate.addColorStop(1, '#0a1c40');
+    plate.addColorStop(0, skin ? this.shadeSkin(skin, 0.35) : '#486a9f');
+    plate.addColorStop(0.35, skin ? this.shadeSkin(skin, -0.15) : '#294b82');
+    plate.addColorStop(1, skin ? this.shadeSkin(skin, -0.62) : '#0a1c40');
     ctx.fillStyle = plate;
     ctx.shadowColor = 'rgba(0, 5, 22, 0.55)';
     ctx.shadowBlur = R * 0.7;
@@ -921,8 +934,8 @@ export class Renderer {
     ctx.beginPath();
     ctx.ellipse(0, -R * 0.1, R * 1.7, R * 1.12, 0, 0, TAU);
     const inner = ctx.createLinearGradient(0, -R, 0, R);
-    inner.addColorStop(0, '#173866');
-    inner.addColorStop(1, '#081833');
+    inner.addColorStop(0, skin ? this.shadeSkin(skin, -0.35) : '#173866');
+    inner.addColorStop(1, skin ? this.shadeSkin(skin, -0.7) : '#081833');
     ctx.fillStyle = inner;
     ctx.fill();
     ctx.beginPath();
@@ -951,11 +964,11 @@ export class Renderer {
     const barrelWidth = R * 1.02;
     roundRect(ctx, -barrelWidth / 2, -barrelLength + R * 0.2, barrelWidth, barrelLength, R * 0.4);
     const barrel = ctx.createLinearGradient(-barrelWidth / 2, 0, barrelWidth / 2, 0);
-    barrel.addColorStop(0, '#0c1f43');
-    barrel.addColorStop(0.28, this.skinColor ? this.mixSkin(this.skinColor, '#3f639b') : '#3f639b');
-    barrel.addColorStop(0.5, '#7598c8');
-    barrel.addColorStop(0.72, '#2c4c7e');
-    barrel.addColorStop(1, '#0a1938');
+    barrel.addColorStop(0, skin ? this.shadeSkin(skin, -0.72) : '#0c1f43');
+    barrel.addColorStop(0.28, skin ? this.shadeSkin(skin, -0.12) : '#3f639b');
+    barrel.addColorStop(0.5, skin ? this.shadeSkin(skin, 0.32) : '#7598c8');
+    barrel.addColorStop(0.72, skin ? this.shadeSkin(skin, -0.28) : '#2c4c7e');
+    barrel.addColorStop(1, skin ? this.shadeSkin(skin, -0.78) : '#0a1938');
     ctx.fillStyle = barrel;
     ctx.fill();
     ctx.strokeStyle = 'rgba(170, 210, 255, 0.35)';
@@ -964,8 +977,8 @@ export class Renderer {
     // Muzzle ring.
     roundRect(ctx, -barrelWidth * 0.64, -barrelLength + R * 0.02, barrelWidth * 1.28, R * 0.38, R * 0.18);
     const rim = ctx.createLinearGradient(0, -barrelLength, 0, -barrelLength + R * 0.4);
-    rim.addColorStop(0, this.skinColor || '#a9cdf7');
-    rim.addColorStop(1, '#3d6194');
+    rim.addColorStop(0, skin ? this.shadeSkin(skin, 0.45) : '#a9cdf7');
+    rim.addColorStop(1, skin ? this.shadeSkin(skin, -0.35) : '#3d6194');
     ctx.fillStyle = rim;
     ctx.fill();
     ctx.restore();

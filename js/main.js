@@ -767,12 +767,40 @@ async function refreshStoreShop() {
   ads.hideBanner();
 }
 
+function applyClaimedPurchases(purchases) {
+  if (!Array.isArray(purchases) || !purchases.length) return;
+  let granted = false;
+  for (const item of purchases) {
+    const pack = COIN_PACKS.find((pack) => pack.id === item.productId);
+    if (pack) {
+      if (!store.grantPurchase(pack.id, item.paymentId)) continue;
+      store.addCoins(pack.coins);
+      granted = true;
+    } else if (item.productId === REMOVE_ADS_PRODUCT.id) {
+      if (!store.grantPurchase(item.productId, item.paymentId)) continue;
+      ads.setRemoveAds(true);
+      granted = true;
+    }
+  }
+  if (!granted) return;
+  ui.setCoins(store.coins);
+  ui.renderShop();
+  ui.renderMenu();
+  ui.toast('Покупка начислена');
+}
 async function buyCoinsPack(productId) {
   const pack = COIN_PACKS.find((item) => item.id === productId);
-  if (!pack || !iap.ready || iap.busy) return;
+  if (!pack) return;
+  if (!iap.ready) {
+    ui.toast('Оплата временно недоступна');
+    return;
+  }
+  ui.setShopBusy(true);
   const result = await iap.buy(productId);
+  ui.setShopBusy(false);
   if (!result.ok) {
-    ui.toast(result.reason === 'CANCELLED' ? 'Покупка отменена' : 'Не удалось совершить покупку');
+    if (result.reason === 'BUSY') ui.toast('Предыдущий платёж ещё обрабатывается');
+    else ui.toast(result.reason === 'CANCELLED' ? 'Покупка отменена' : 'Не удалось совершить покупку');
     return;
   }
   const applied = store.grantPurchase(productId, result.purchaseId || String(Date.now()));
@@ -791,10 +819,17 @@ async function buyCoinsPack(productId) {
 }
 
 async function buyRemoveAds() {
-  if (!iap.ready || iap.busy || store.hasRemoveAds) return;
+  if (store.hasRemoveAds) return;
+  if (!iap.ready) {
+    ui.toast('Оплата временно недоступна');
+    return;
+  }
+  ui.setShopBusy(true);
   const result = await iap.buy(REMOVE_ADS_PRODUCT.id);
+  ui.setShopBusy(false);
   if (!result.ok) {
-    ui.toast(result.reason === 'CANCELLED' ? 'Покупка отменена' : 'Не удалось совершить покупку');
+    if (result.reason === 'BUSY') ui.toast('Предыдущий платёж ещё обрабатывается');
+    else ui.toast(result.reason === 'CANCELLED' ? 'Покупка отменена' : 'Не удалось совершить покупку');
     return;
   }
   store.grantPurchase(REMOVE_ADS_PRODUCT.id, result.purchaseId || '');
@@ -1562,6 +1597,9 @@ async function bootStoreBuild() {
     ads.setRemoveAds(store.hasRemoveAds);
   }
   await refreshAds();
+  // Purchases paid earlier but not applied (app was closed on the payment
+  // page) are handed back by the server for this device and granted here.
+  applyClaimedPurchases(await iap.claim());
   net.onChange((online) => {
     if (online) {
       ui.hideOffline();
@@ -1754,6 +1792,14 @@ if (QA || !platform.enabled) window.__bubblePop = {
   /** QA only: the live Game instance, for tests that inspect the grid. */
   get game() {
     return game;
+  },
+  /** QA only: purchase bridge, for payment flow tests. */
+  get iap() {
+    return iap;
+  },
+  /** QA only: canvas renderer, for visual checks. */
+  get renderer() {
+    return renderer;
   },
   get paused() {
     return paused;

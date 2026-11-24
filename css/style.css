@@ -2892,3 +2892,11 @@ body.has-banner .app {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Purchase buttons while a payment is in flight */
+.coin-pack.is-busy,
+#btnRemoveAds.is-busy,
+.coins-row.is-busy .coin-pack {
+  opacity: 0.55;
+  filter: saturate(0.6);
+}

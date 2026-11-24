@@ -538,6 +538,13 @@ export class UI {
     this.el.btnRemoveAds.dataset.action = 'buyRemoveAds';
   }
 
+  /** Dims purchase buttons while a payment is being processed. */
+  setShopBusy(busy) {
+    const row = this.el.coinsRow;
+    if (row) row.classList.toggle('is-busy', Boolean(busy));
+    if (this.el.btnRemoveAds) this.el.btnRemoveAds.classList.toggle('is-busy', Boolean(busy));
+  }
+
   setBannerSlot(visible) {
     if (!this.el.adBanner) return;
     this.el.adBanner.hidden = !visible;
