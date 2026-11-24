@@ -88,6 +88,7 @@ export class UI {
       coinsRow: $('coinsRow'),
       btnRemoveAds: $('btnRemoveAds'),
       adBanner: $('adBanner'),
+      gameBanner: $('gameBanner'),
       btnContinueAd: $('btnContinueAd'),
     };
 
@@ -545,6 +546,19 @@ export class UI {
   bannerRect() {
     if (!this.el.adBanner) return null;
     const rect = this.el.adBanner.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    return { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
+  }
+
+  /** Reserved slot under the board; the native banner sits exactly here. */
+  setGameBannerSlot(visible) {
+    if (!this.el.gameBanner) return;
+    this.el.gameBanner.hidden = !visible;
+  }
+
+  gameBannerRect() {
+    if (!this.el.gameBanner || this.el.gameBanner.hidden) return null;
+    const rect = this.el.gameBanner.getBoundingClientRect();
     if (!rect.width || !rect.height) return null;
     return { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
   }

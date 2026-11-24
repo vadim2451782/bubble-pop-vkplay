@@ -125,7 +125,36 @@ function queueResize() {
   requestAnimationFrame(() => {
     resizeQueued = false;
     resizeStage();
+    // The banner is a native view pinned to CSS coordinates: recreate it so it
+    // follows the new layout after a resize or a fullscreen switch.
+    if (window.__STORE__ && game && !resultScreenOpen && !paused) {
+      ads.hideBanner();
+      refreshGameBanner();
+    }
   });
+}
+
+/** Banner under the board while a level is being played (store builds only). */
+function refreshGameBanner() {
+  if (!window.__STORE__) return;
+  if (!game || resultScreenOpen || paused || !ads.bannerSupported) {
+    ui.setGameBannerSlot(false);
+    return;
+  }
+  ui.setGameBannerSlot(true);
+  requestAnimationFrame(() => {
+    const rect = ui.gameBannerRect();
+    if (!rect) {
+      ui.setGameBannerSlot(false);
+      return;
+    }
+    ads.showBanner(rect);
+  });
+}
+
+function hideGameBanner() {
+  ui.setGameBannerSlot(false);
+  ads.hideBanner();
 }
 
 /* ------------------------------------------------------------------ audio */
@@ -185,6 +214,7 @@ function startLevel(id, { announce = true } = {}) {
   refreshAim();
   ensureAudioOnGesture();
   startLoop();
+  refreshGameBanner();
 }
 
 function ensureAudioOnGesture() {
@@ -325,6 +355,7 @@ function settleLevelReward(outcome) {
 function finishWin() {
   if (!game || game.phase !== 'won' || resultScreenOpen) return;
   resultScreenOpen = true;
+  hideGameBanner();
   paused = true;
   const level = game.level;
   const stars = Math.max(1, game.stars || 1);
@@ -359,6 +390,7 @@ function finishWin() {
 function finishLose() {
   if (!game || game.phase !== 'lost' || resultScreenOpen) return;
   resultScreenOpen = true;
+  hideGameBanner();
   paused = true;
   const paid = settleLevelReward('lose');
   audio.play('lose');
@@ -605,10 +637,11 @@ function resumeGame() {
   ui.syncHud(game);
   refreshAim();
   lastTs = performance.now();
+  refreshGameBanner();
 }
 
 function returnToMenu() {
-  ads.hideBanner();
+  hideGameBanner();
   clearTimeout(resolveTimer);
   resolveTimer = 0;
   // Leaving a level mid-way pays the same reduced reward as losing it, so the

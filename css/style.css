@@ -1971,6 +1971,19 @@ svg.sprite {
 
 .ad-banner[hidden] { display: none; }
 
+/* In-game banner: sits between the board and the dock, never over the play field. */
+.ad-banner--game {
+  flex: 0 0 auto;
+  height: 50px;
+  margin: 6px auto 4px;
+  max-width: 680px;
+  border-radius: 12px;
+}
+
+@media (max-height: 640px) {
+  .ad-banner--game { height: 42px; margin: 4px auto 2px; }
+}
+
 .btn--ad {
   display: flex;
   align-items: center;
