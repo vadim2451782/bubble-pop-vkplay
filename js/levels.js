@@ -5,7 +5,6 @@
  */
 import { COLS, COLORS, MAX_LEVEL } from './config.js';
 import { connectPattern } from './grid.js';
-import { SOLVE_TURNS } from './level-audit.js';
 
 const ROW_WIDTH = (r) => (r % 2 === 0 ? COLS : COLS - 1);
 const MID = (w) => (w - 1) / 2;
@@ -289,7 +288,10 @@ function buildLevel(spec, index) {
     ({ rows, bubbles: totalBubbles } = paint('full', Math.min(10, Math.max(7, spec.rows + 2))));
   }
 
-  const shots = Math.max(spec.shots, Math.ceil(totalBubbles * 1.15) + 36);
+  const baseShots = Math.max(spec.shots, Math.ceil(totalBubbles * 1.15) + 36);
+  // Shorter levels: the budget is halved (with a small floor so a level is
+  // never unplayable by construction).
+  const shots = Math.max(12, Math.round(baseShots / 2));
   const palette = COLORS.slice(0, spec.colors).map((c) => c.id);
 
   return {
@@ -337,15 +339,7 @@ const RANKED = DRAFT.map((level, index) => ({
     };
   });
 
-export const LEVELS = RANKED.map((spec, index) => {
-  const level = buildLevel(spec, index);
-  const solveTurns = SOLVE_TURNS[level.id] || 0;
-  if (solveTurns) {
-    level.shots = Math.max(level.shots, solveTurns + 10);
-    level.hint = `${level.totalBubbles} шариков · ${level.shots} ходов`;
-  }
-  return level;
-});
+export const LEVELS = RANKED.map((spec, index) => buildLevel(spec, index));
 
 export function getLevel(id) {
   const level = LEVELS.find((l) => l.id === id) || LEVELS[0];

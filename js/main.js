@@ -1433,8 +1433,9 @@ document.getElementById('btnMusic').addEventListener('click', toggleMusic);
 document.getElementById('toggleSound').addEventListener('click', toggleSound);
 document.getElementById('toggleMusic').addEventListener('click', toggleMusic);
 document.getElementById('btnCancelBooster').addEventListener('click', () => {
-  cancelBooster();
-  ui.toast('Бустер отменён', 1100);
+  // The cross only hides the hint bar (it covers the top row). The booster
+  // itself stays armed and is cancelled by tapping its button again.
+  ui.hideTargetHintOnly();
 });
 document.getElementById('boosterBar').addEventListener('click', (event) => {
   const button = event.target.closest('[data-booster]');
@@ -1749,6 +1750,10 @@ if (QA || !platform.enabled) window.__bubblePop = {
   },
   get save() {
     return JSON.parse(JSON.stringify(store.state));
+  },
+  /** QA only: the live Game instance, for tests that inspect the grid. */
+  get game() {
+    return game;
   },
   get paused() {
     return paused;

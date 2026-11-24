@@ -644,6 +644,11 @@ export class UI {
     this.setBoosterActive(null);
   }
 
+  /** Hides the hint bar but keeps the booster armed (its cross button). */
+  hideTargetHintOnly() {
+    this.el.targetHint.hidden = true;
+  }
+
   /* ------------------------------------------------------------- results */
 
   showWin({ game, stars, coins, nextExists }) {
