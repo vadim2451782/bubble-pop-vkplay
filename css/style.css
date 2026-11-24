@@ -1972,6 +1972,57 @@ svg.sprite {
 .ad-banner[hidden] { display: none; }
 
 /* Native banner strip: the app shrinks, so the ad never covers content. */
+/* Demo build: simulated banner strip so the layout can be reviewed in a browser. */
+.demo-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(100%, 680px);
+  height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: linear-gradient(180deg, #122a5e, #0b1c42);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-bottom: none;
+  border-radius: 14px 14px 0 0;
+  z-index: 40;
+  color: #dbe9ff;
+}
+
+.demo-banner[hidden] { display: none; }
+
+.demo-banner__tag {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9fb7e6;
+  border: 1px solid rgba(159, 183, 230, 0.5);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.demo-banner__thumb {
+  width: 60px;
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffd35c, #ff8a00 55%, #ff3d5f);
+}
+
+.demo-banner__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.demo-banner__text b { font-size: 13px; }
+.demo-banner__text small { font-size: 11px; color: rgba(219, 233, 255, 0.7); }
+
+@media (max-height: 640px) {
+  .demo-banner { height: 42px; }
+  .demo-banner__thumb { width: 44px; height: 30px; }
+}
 body.has-banner .app {
   /* The native banner is 50dp tall: shrink the app so nothing hides under it. */
   height: calc(100dvh - 58px - env(safe-area-inset-bottom, 0px));

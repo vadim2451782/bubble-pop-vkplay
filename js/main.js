@@ -134,8 +134,34 @@ function queueResize() {
   });
 }
 
+/**
+ * Demo build: the store build with a simulated banner, so the layout can be
+ * reviewed in a desktop browser instead of installing an APK on a phone.
+ */
+const DEMO_ADS = window.__DEMO_ADS__ === true;
+let demoBannerEl = null;
+
+function setDemoAdStrip(visible) {
+  if (!DEMO_ADS) return;
+  if (!demoBannerEl) {
+    demoBannerEl = document.createElement('div');
+    demoBannerEl.className = 'demo-banner';
+    demoBannerEl.innerHTML =
+      '<span class="demo-banner__tag">Реклама</span>' +
+      '<span class="demo-banner__thumb"></span>' +
+      '<span class="demo-banner__text"><b>Демо-баннер</b><small>так выглядит место под рекламу Яндекса</small></span>';
+    document.querySelector('.app')?.append(demoBannerEl);
+  }
+  demoBannerEl.hidden = !visible;
+  ui.setBannerReserved(visible);
+}
+
 /** Banner strip at the bottom of the screen while a level is played. */
 function refreshGameBanner() {
+  if (DEMO_ADS) {
+    setDemoAdStrip(Boolean(game) && !resultScreenOpen && !paused);
+    return;
+  }
   if (!window.__STORE__) return;
   if (!game || resultScreenOpen || paused || !ads.bannerSupported || ads.removeAds) {
     ui.setBannerReserved(false);
@@ -143,10 +169,14 @@ function refreshGameBanner() {
     return;
   }
   ui.setBannerReserved(true);
-  ads.showBanner({});
+  ads.showBanner({ width: Math.min(window.innerWidth || 360, 680) });
 }
 
 function hideGameBanner() {
+  if (DEMO_ADS) {
+    setDemoAdStrip(false);
+    return;
+  }
   ui.setBannerReserved(false);
   ads.hideBanner();
 }
@@ -679,6 +709,10 @@ function openShop(from = 'menu') {
 
 /** Coin packs, "remove ads" and the banner: store builds only. */
 async function refreshStoreShop() {
+  if (DEMO_ADS) {
+    setDemoAdStrip(true);
+    return;
+  }
   if (!window.__STORE__) return;
   if (!iap.ready) {
     ui.renderCoinShop({});
@@ -694,7 +728,7 @@ async function refreshStoreShop() {
 
   if (ads.bannerSupported && !store.hasRemoveAds) {
     ui.setBannerReserved(true);
-    const shown = await ads.showBanner({});
+    const shown = await ads.showBanner({ width: Math.min(window.innerWidth || 360, 680) });
     if (!shown) ui.setBannerReserved(false);
     return;
   }
