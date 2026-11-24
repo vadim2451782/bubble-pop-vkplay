@@ -1971,6 +1971,12 @@ svg.sprite {
 
 .ad-banner[hidden] { display: none; }
 
+/* Native banner strip: the app shrinks, so the ad never covers content. */
+body.has-banner .app {
+  /* The native banner is 50dp tall: shrink the app so nothing hides under it. */
+  height: calc(100dvh - 58px - env(safe-area-inset-bottom, 0px));
+}
+
 /* In-game banner: sits between the board and the dock, never over the play field. */
 .ad-banner--game {
   flex: 0 0 auto;

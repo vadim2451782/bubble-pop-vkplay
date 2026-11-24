@@ -134,26 +134,20 @@ function queueResize() {
   });
 }
 
-/** Banner under the board while a level is being played (store builds only). */
+/** Banner strip at the bottom of the screen while a level is played. */
 function refreshGameBanner() {
   if (!window.__STORE__) return;
-  if (!game || resultScreenOpen || paused || !ads.bannerSupported) {
-    ui.setGameBannerSlot(false);
+  if (!game || resultScreenOpen || paused || !ads.bannerSupported || ads.removeAds) {
+    ui.setBannerReserved(false);
+    ads.hideBanner();
     return;
   }
-  ui.setGameBannerSlot(true);
-  requestAnimationFrame(() => {
-    const rect = ui.gameBannerRect();
-    if (!rect) {
-      ui.setGameBannerSlot(false);
-      return;
-    }
-    ads.showBanner(rect);
-  });
+  ui.setBannerReserved(true);
+  ads.showBanner({});
 }
 
 function hideGameBanner() {
-  ui.setGameBannerSlot(false);
+  ui.setBannerReserved(false);
   ads.hideBanner();
 }
 
@@ -699,13 +693,12 @@ async function refreshStoreShop() {
   });
 
   if (ads.bannerSupported && !store.hasRemoveAds) {
-    ui.setBannerSlot(true);
-    const rect = ui.bannerRect();
-    const shown = rect ? await ads.showBanner(rect) : false;
-    if (!shown) ui.setBannerSlot(false);
+    ui.setBannerReserved(true);
+    const shown = await ads.showBanner({});
+    if (!shown) ui.setBannerReserved(false);
     return;
   }
-  ui.setBannerSlot(false);
+  ui.setBannerReserved(false);
   ads.hideBanner();
 }
 
@@ -741,6 +734,7 @@ async function buyRemoveAds() {
   }
   store.grantPurchase(REMOVE_ADS_PRODUCT.id, result.purchaseId || '');
   ads.setRemoveAds(true);
+  ui.setBannerReserved(false);
   ui.setBannerSlot(false);
   ui.renderShop();
   ui.renderMenu();

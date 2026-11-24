@@ -550,6 +550,11 @@ export class UI {
     return { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
   }
 
+  /** Reserves bottom space for the native banner strip (body padding). */
+  setBannerReserved(visible) {
+    document.body.classList.toggle('has-banner', Boolean(visible));
+  }
+
   /** Reserved slot under the board; the native banner sits exactly here. */
   setGameBannerSlot(visible) {
     if (!this.el.gameBanner) return;
